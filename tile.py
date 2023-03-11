@@ -15,7 +15,6 @@ limitations under the License.
 '''
 from team import TeamPresets as tp
 from PIL import Image
-import colorsys
 import os
 
 class Tile:

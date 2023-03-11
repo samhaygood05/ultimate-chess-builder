@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from render_engine import RenderEngine
 from tile import Tile
 from team import Team
 from team import TeamPresets as tp

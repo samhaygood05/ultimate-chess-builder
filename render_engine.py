@@ -16,7 +16,6 @@ limitations under the License.
 
 from rule_engine import RuleEngine
 from board import Board
-from team import TeamPresets as tp
 import pygame
 import os
 
@@ -172,7 +171,7 @@ class RenderEngine:
         turn = f"{self.board.current_team}'s turn"
         pygame.display.set_caption(turn)
 
-        icon = pygame.image.load('images/white/pawn.png')
+        icon = pygame.image.load(f'images/{self.board.current_team}/pawn.png')
         pygame.display.set_icon(icon)
 
         screen.fill(color1)
@@ -221,6 +220,8 @@ class RenderEngine:
                                 self.board = self.rule_engine.play_move(self.board, selected_tile[0], clicked_tile, illegal_moves)
                                 turn = f"{self.board.current_team}'s turn"
                                 pygame.display.set_caption(turn)
+                                icon = pygame.image.load(f'images/{self.board.current_team}/pawn.png')
+                                pygame.display.set_icon(icon)
                                 selected_tile = []
 
                     elif event.button == 3:
