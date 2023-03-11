@@ -114,3 +114,30 @@ class Variants:
         'white': ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12', 'p16'],
         'black': ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'i1', 'j1', 'k1', 'l1', 'm1', 'n1', 'o1', 'p1']
     }))
+
+    FOUR_TEAM_CHESS = (Board(board_state=
+        [[None, None, None, Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE), None, None, None],
+        [None, None, None, Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), None, None, None],
+        [None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), None, None, None],
+        [Tile('rook', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('rook', tp.GREEN)],
+        [Tile('knight', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('knight', tp.GREEN)],
+        [Tile('bishop', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('bishop', tp.GREEN)],
+        [Tile('queen', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('queen', tp.GREEN)],
+        [Tile('king', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('king', tp.GREEN)],
+        [Tile('bishop', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('bishop', tp.GREEN)],
+        [Tile('knight', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('knight', tp.GREEN)],
+        [Tile('rook', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('rook', tp.GREEN)],
+        [None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), None, None, None],
+        [None, None, None, Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), None, None, None],
+        [None, None, None, Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK), None, None, None]]
+    ),
+    RuleEngine(
+        teams=Team.team_dict(tp.WHITE, tp.RED, tp.BLACK, tp.GREEN),
+        promotion_tiles={
+            'white': ['d14', 'e14', 'f14', 'g14', 'h14', 'i14', 'j14', 'k14'],
+            'red': ['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11'],
+            'black': ['d1', 'e1', 'f1', 'g1', 'h1', 'i1', 'j1', 'k1'],
+            'green': ['a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11']
+        },
+        turn_order=['white', 'red', 'black', 'green']
+    ))

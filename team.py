@@ -41,4 +41,6 @@ class Team:
 class TeamPresets:
     WHITE = Team('white', (1, 0))
     BLACK = Team('black', (-1, 0))
+    RED = Team('red', (0, 1))
+    GREEN = Team('green', (0, -1), hue=120)
     EMPTY = Team('empty', (0,0))

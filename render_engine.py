@@ -18,6 +18,7 @@ from rule_engine import RuleEngine
 from board import Board
 from team import TeamPresets as tp
 import pygame
+import os
 
 class RenderEngine:
     def __init__(self, board: Board = None, rule_engine: RuleEngine = None):
@@ -81,20 +82,22 @@ class RenderEngine:
                             filename = piece.get_file_name()
                             try:
                                 image = pygame.transform.scale(pygame.image.load(filename), (tile_size, tile_size))
-                                if piece.team.name not in ['white', 'black']:
+                                img_folder = f'{os.getcwd()}\\images'
+                                teams = os.listdir(img_folder) 
+                                if piece.team.name not in teams:
                                     pixels = pygame.PixelArray(image)
                                     # Iterate over every pixel                                             
-                                    for x in range(image.get_width()):
-                                        for y in range(image.get_height()):
+                                    for x_img in range(image.get_width()):
+                                        for y_img in range(image.get_height()):
                                             # Turn the pixel data into an RGB tuple
-                                            rgb = image.unmap_rgb(pixels[x][y])
+                                            rgb = image.unmap_rgb(pixels[x_img][y_img])
                                             # Get a new color object using the RGB tuple and convert to HSLA
                                             color = pygame.Color(*rgb)
                                             h, s, l, a = color.hsla
                                             # shifts hue (or however much you want) and wrap to under 360
                                             color.hsla = (int(h) + piece.team.hue) % 360, int(s), int(l), int(a)
                                             # Assign directly to the pixel
-                                            pixels[x][y] = color
+                                            pixels[x_img][y_img] = color
                                     # The old way of closing a PixelArray object
                                     del pixels
                             except:
