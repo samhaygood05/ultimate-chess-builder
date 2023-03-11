@@ -1,2 +1,2 @@
 # chess
- A fully customizable chess engine
+ A fully customizable chess engine (WIP)
