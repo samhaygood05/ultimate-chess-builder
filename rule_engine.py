@@ -2,48 +2,56 @@ from rule_set import RuleSet
 from board import Board
 from team import Team
 from tile import Tile
+from team import TeamPresets as tp
 
 class RuleEngine:
-    def __init__(self, rulesets: dict = None):
+    def __init__(self, rulesets: dict = None, teams = None, turn_order = None):
         self.rulesets = RuleSet.rule_dict(
-            RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, False, True, 'queen'),
-            RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, True, False),
-            RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, True, False),
-            RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, False, False),
-            RuleSet('queen', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, True, False),
-            RuleSet('king', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, False, False)
+            RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen', 0),
+            RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
+            RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
+            RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
+            RuleSet('queen', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, True),
+            RuleSet('king', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, False)
         )
         if rulesets != None:
             self.rulesets.update(rulesets)
+        if teams == None:
+            self.teams = Team.team_dict(tp.WHITE, tp.BLACK)
+        else:
+            self.teams = teams
+        if turn_order == None:
+            self.turn_order = ['white', 'black']
+        else:
+            self.turn_order = turn_order
 
     def add_ruleset(self, tile, board: Board, ruleset: RuleSet):
         piece = board.get_tile(tile)
         team = piece.team
+        allies = team.allies
         piece_name = ruleset.name
         moveset = ruleset.moveset
         captureset = ruleset.captureset
         first_move = ruleset.first_move
+        first_move_boost = ruleset.first_move_boost
         multimove = ruleset.multimove
-        directional = ruleset.directional
 
         if captureset == None:
             captureset = moveset
-        enemy = Team.EMPTY
-        if team == Team.WHITE:
-            enemy = Team.BLACK
-        elif team == Team.BLACK:
-            enemy = Team.WHITE
+
         row, col = Board.tile_to_index(tile)
         legal_moves = []
-        direction = 1
-        if directional and team == Team.BLACK:
-            direction = -1
+        direction = team.direction
+        side_direction = team.perpendicular
 
         if piece.piece == piece_name:
             # Logic for Moveset
-            for delta_row, delta_col in moveset:
-                new_row = row + delta_row*direction
-                new_col = col + delta_col
+            for delta_forward, delta_right in moveset:
+                delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
+
+
+                new_row = row + delta[0]
+                new_col = col + delta[1]
                 if multimove:
                     while (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
@@ -53,8 +61,8 @@ class RuleEngine:
                             legal_moves.append(Board.index_to_tile(new_row, new_col))
                         else:
                             break
-                        new_row += delta_row*direction
-                        new_col += delta_col
+                        new_row += delta[0]
+                        new_col += delta[1]
                 else:
                     if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
@@ -62,19 +70,21 @@ class RuleEngine:
                             if target.piece == 'empty':
                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
                                 if first_move and not piece.has_moved:
-                                    while new_row < len(board.board) / 2 - 1 or new_row > len(board.board) / 2:
-                                        new_row += delta_row*direction
-                                        new_col += delta_col
+                                    for i in range(first_move_boost - 1):
+                                        new_row += delta[0]
+                                        new_col += delta[1]
                                         try:
                                             target = board.board[new_row][new_col]
                                             if target.piece == 'empty':
-                                                legal_moves.append(Board.index_to_tile(new_row, new_col ))
+                                                legal_moves.append(Board.index_to_tile(new_row, new_col))
                                         except:
                                             break
             # Logic for Capture Set
             for delta_row, delta_col in captureset:
-                new_row = row + delta_row*direction
-                new_col = col + delta_col
+                delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
+
+                new_row = row + delta[0]
+                new_col = col + delta[1]
                 if multimove:
                     while (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
@@ -82,18 +92,18 @@ class RuleEngine:
                             break
                         if target.piece == 'empty':
                             pass
-                        elif target.team == enemy:
+                        elif target.team.name not in allies:
                             legal_moves.append(Board.index_to_tile(new_row, new_col))
                             break
                         else:
                             break
-                        new_row += delta_row*direction
-                        new_col += delta_col
+                        new_row += delta[0]
+                        new_col += delta[1]
                 else:
                     if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
                         if target != None:
-                            if target.team == enemy:
+                            if target.team.name not in allies:
                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
         return legal_moves
 
@@ -124,22 +134,18 @@ class RuleEngine:
         for row in range(len(board.board)):
             for col in range(len(board.board[row])):
                 tile = board.board[row][col]
-                if team == tile.team:
+                if team == tile.team.name:
                     legal_moves.extend(self.get_legal_moves(tile, board))
         return legal_moves
 
     def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False) -> Board:
-        if board.white_first:
-            current_team = Team.WHITE
-        else:
-            current_team = Team.BLACK
         if not illegal_moves:
             legal_moves = self.get_legal_moves(start_tile, board)
             if end_tile not in legal_moves:
                 print("Illegal Move")
                 return board
         
-        if board.get_tile(start_tile).team != current_team:
+        if board.get_tile(start_tile).team.name != board.current_team:
             print("You Can't Play Your Opponent's Pieces")
             return board
             
@@ -155,10 +161,15 @@ class RuleEngine:
         ruleset = self.rulesets[piece]
         promotion, promotion_row = ruleset.promotion, ruleset.promotion_row
         if promotion != None:
-            if (end[0] == len(board.board) - 1 - promotion_row and current_team == Team.WHITE) or (end[0] == promotion_row and current_team == Team.BLACK):
+            if (end[0] == len(board.board) - 1 - promotion_row and board.current_team == tp.WHITE) or (end[0] == promotion_row and board.current_team == tp.BLACK):
                 new_board[end[0]][end[1]] = new_board[end[0]][end[1]].promote(promotion)
 
-        return Board(not board.white_first, new_board)
+        next_index = self.turn_order.index(board.current_team) + 1
+        if next_index in range(len(self.turn_order)):
+            next_team = self.turn_order[next_index]
+        else:
+            next_team = self.turn_order[0]
+        return Board(next_team, new_board)
     
     def __str__(self):
         return str(self.rulesets)

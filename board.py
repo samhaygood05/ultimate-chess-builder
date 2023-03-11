@@ -16,34 +16,24 @@ limitations under the License.
 from team import Team
 from tile import Tile
 from rule_set import RuleSet
-import pygame
+from team import TeamPresets as tp
 import copy
 
 class Board:
-    def __init__(self, white_first=True, board_state=None, rulesets=None):
+    def __init__(self, current_team='white', board_state=None):
         if board_state == None:
-            self.board = [[Tile('rook', Team.WHITE), Tile('knight', Team.WHITE), Tile('bishop', Team.WHITE), Tile('queen', Team.WHITE), Tile('king', Team.WHITE), Tile('bishop', Team.WHITE), Tile('knight', Team.WHITE), Tile('rook', Team.WHITE)],
-                            [Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE), Tile('pawn', Team.WHITE)],
+            self.board = [[Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE)],
+                            [Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE)],
                             [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
                             [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
                             [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
                             [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                            [Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK), Tile('pawn', Team.BLACK)],
-                            [Tile('rook', Team.BLACK), Tile('knight', Team.BLACK), Tile('bishop', Team.BLACK), Tile('queen', Team.BLACK), Tile('king', Team.BLACK), Tile('bishop', Team.BLACK), Tile('knight', Team.BLACK), Tile('rook', Team.BLACK)]]
+                            [Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK)],
+                            [Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK)]]
         else:
             self.board = board_state
 
-        self.white_first = white_first
-        self.rulesets = RuleSet.rule_dict(
-            RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, False, True, 'queen'),
-            RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, True, False),
-            RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, True, False),
-            RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, False, False),
-            RuleSet('queen', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, True, False),
-            RuleSet('king', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, False, False)
-        )
-        if rulesets != None:
-            self.rulesets.update(rulesets)
+        self.current_team = current_team
 
     def copy(self):
         copy_board = Board(copy.deepcopy(self.board), self.white_first, self.rulesets)

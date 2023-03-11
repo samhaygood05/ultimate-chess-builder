@@ -14,9 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from enum import Enum
+class Team:
+    def __init__(self, name, direction, allies):
+        self.name = name
+        self.direction = direction
+        self.perpendicular = (direction[1], -direction[0])
+        self.allies = ['empty'] + allies
 
-class Team(Enum):
-    WHITE = "W"
-    BLACK = "B"
-    EMPTY = "0"
+    def team_dict(*teams):
+        dictionary: dict = {}
+        for team in teams:
+            dictionary.update({team.name: team})
+        return dictionary
+
+class TeamPresets:
+    WHITE = Team('white', (1, 0), ['white'])
+    BLACK = Team('black', (-1, 0), ['black'])
+    EMPTY = Team('empty', (0,0), [])

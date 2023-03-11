@@ -1,6 +1,6 @@
 from rule_engine import RuleEngine
 from board import Board
-from team import Team
+from team import TeamPresets as tp
 import pygame
 
 class RenderEngine:
@@ -67,7 +67,7 @@ class RenderEngine:
                                 image = pygame.transform.scale(pygame.image.load(filename), (tile_size, tile_size))
                             except:
                                 image = pygame.Surface((tile_size*0.75, tile_size*0.75))
-                                if piece.team == Team.BLACK:
+                                if piece.team == tp.BLACK:
                                     image.fill((0, 0, 0))
                                 else:
                                     image.fill((255, 255, 200))
@@ -100,7 +100,7 @@ class RenderEngine:
 
         # Update the screen
         pygame.display.update()
-        
+
         return screen
     
     def render_board(self, tile_size=90, color1=(255, 255, 255), color2=(128, 128, 128), text_color=(0, 0, 0), highlight_color=(255, 255, 0, 128), illegal_moves=False):
@@ -117,10 +117,7 @@ class RenderEngine:
         # Create a font for drawing text
         font = pygame.font.Font(None, 24)
 
-        if self.board.white_first:
-            turn = "White's Turn"
-        else:
-            turn = "Black's Turn"
+        turn = f"{self.board.current_team}'s turn"
         pygame.display.set_caption(turn)
 
         icon = pygame.image.load('images/white/pawn.png')
@@ -169,10 +166,7 @@ class RenderEngine:
                                     legal_moves = self.rule_engine.get_legal_moves(clicked_tile, self.board)
                             else:
                                 self.board = self.rule_engine.play_move(self.board, selected_tile[0], clicked_tile, illegal_moves)
-                                if self.board.white_first:
-                                    turn = "White's Turn"
-                                else:
-                                    turn = "Black's Turn"
+                                turn = f"{self.board.current_team}'s turn"
                                 pygame.display.set_caption(turn)
                                 selected_tile = []
 

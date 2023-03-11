@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
-from team import Team
+from team import TeamPresets as tp
 
 class Tile:
     def __init__(self, piece=None, team=None, is_royal=None, has_moved=False):
@@ -23,7 +23,7 @@ class Tile:
             self.piece = piece
         self.has_moved = has_moved
         if team == None:
-            self.team = Team.EMPTY
+            self.team = tp.EMPTY
         else:
             self.team = team
         if is_royal == None:
@@ -40,9 +40,9 @@ class Tile:
         return self
     
     def get_file_name(self):
-        if self.team == Team.WHITE:
+        if self.team == tp.WHITE:
             file = f"images/white/{self.piece}.png"
-        elif self.team == Team.BLACK:
+        elif self.team == tp.BLACK:
             file = f"images/black/{self.piece}.png"
         return file
 

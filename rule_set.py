@@ -15,13 +15,13 @@ limitations under the License.
 '''
 
 class RuleSet:
-    def __init__(self, name, moveset, captureset, first_move, multimove, directional, promotion=None, promotion_row=0):
+    def __init__(self, name, moveset, captureset, first_move, first_move_boost, multimove, promotion=None, promotion_row=0):
         self.name = name
         self.moveset = moveset
         self.captureset = captureset
         self.first_move = first_move
+        self.first_move_boost = first_move_boost
         self.multimove = multimove
-        self.directional = directional
         self.promotion = promotion
         self.promotion_row = promotion_row
 
@@ -32,7 +32,7 @@ class RuleSet:
         return dictionary
 
     def __str__(self):
-        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}, Promotion Row: {self.promotion_row}"
+        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}, Promotion Row: {self.promotion_row}"
 
     def __repr__(self):
-        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}, Promotion Row: {self.promotion_row}"
+        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}, Promotion Row: {self.promotion_row}"
