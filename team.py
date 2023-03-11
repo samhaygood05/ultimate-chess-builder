@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+import os
+from PIL import Image
+
 class Team:
     def __init__(self, name, direction, allies=None, hue=0):
         self.name = name
@@ -23,6 +26,30 @@ class Team:
         if allies != None:
             self.allies.extend(allies)
         self.hue = hue
+
+        img_folder = f'{os.getcwd()}\\images'
+        teams = os.listdir(img_folder)
+        if self != None:
+            if self.name not in teams and self.name != 'empty':
+                pieces = os.listdir(f'{img_folder}\\red')
+                os.mkdir(f'{img_folder}\\{self.name}')
+                for piece_name in pieces:
+                    image = Image.open(f'{img_folder}\\red\\{piece_name}')
+                    image = image.convert('RGBA')
+
+                    hsv_image = image.convert('HSV')
+
+                    hue_shift = self.hue / 360.0
+                    h, s, v = hsv_image.split()
+                    r, g, b, a = image.split()
+                    h = h.point(lambda i: (i + hue_shift) % 1.0 * 255)
+
+                    rgb_image = Image.merge('HSV', (h, s, v)).convert('RGB')
+
+                    r, g, b = rgb_image.split()
+                    edited_img = Image.merge('RGBA', (r, g, b, a))
+
+                    edited_img.save(f'{img_folder}\\{self.name}\\{piece_name}')
 
     def team_dict(*teams):
         dictionary: dict = {}

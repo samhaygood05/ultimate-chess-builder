@@ -20,29 +20,25 @@ from team import TeamPresets as tp
 from rule_set import RuleSet
 from rule_engine import RuleEngine
 from board import Board
+import pickle
 
 class Variants:
+    def save(name, board_state, rule_engine):
+        path = f"presets/{name}.chess"
+        try:
+            with open(path, 'xb') as f:
+                pickle.dump((board_state, rule_engine), f)
+        except:
+            with open(path, 'wb') as f:
+                pickle.dump((board_state, rule_engine), f)
+        print('Preset Saved')
 
-    WILDERBEAST = (Board(board_state=
-        [[Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('dragon', tp.WHITE), Tile('long_knight', tp.WHITE), Tile('long_knight', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE)],
-        [Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE)],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK)],
-        [Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('long_knight', tp.BLACK), Tile('long_knight', tp.BLACK), Tile('dragon', tp.BLACK), Tile('king', tp.BLACK), Tile('queen', tp.BLACK), Tile('bishop', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK)]]
-    ),
-    RuleEngine(RuleSet.rule_dict(
-        RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 3, False, 'queen'),
-        RuleSet('long_knight', [(3, 1), (3, -1), (-3, 1), (-3, -1), (1, 3), (1, -3), (-1, 3), (-1, -3)], None, False, 0, False),
-        RuleSet('dragon', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2), (3, 1), (3, -1), (-3, 1), (-3, -1), (1, 3), (1, -3), (-1, 3), (-1, -3)], None, False, 0, False)
-    ), promotion_tiles={
-        'white': ['a10', 'b10', 'c10', 'd10', 'e10', 'f10', 'g10', 'h10', 'i10', 'j10', 'k10'],
-        'black': ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'i1', 'j1', 'k1']
-    }))
+    def load(name):
+        path = f"presets/{name}.chess"
+        with open(path, 'rb') as f:
+            preset = pickle.load(f)
+        print(f'{name} Preset Loaded')
+        return preset
 
     MISC_FANTASY_RULESET = RuleSet.rule_dict(
         RuleSet('zebra', [(3, 2), (3, -2), (-3, 2), (-3, -2), (2, 3), (2, -3), (-2, 3), (-2, -3)], None, False, 0, False),
@@ -50,93 +46,12 @@ class Variants:
         RuleSet('unicorn', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, True)
     )
 
-    CHESS12x12 = (Board(board_state=
-        [[Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE), Tile(), Tile()],
-        [Tile(), Tile(), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile(), Tile()],
-        [Tile(), Tile(), Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()]]
-    ),
-    RuleEngine(RuleSet.rule_dict(RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen')),
-    promotion_tiles= {
-        'white': ['a10', 'b10', 'c10', 'd10', 'e10', 'f10', 'g10', 'h10', 'i10', 'j10', 'k10'],
-        'black': ['a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3', 'i3', 'j3', 'k3']
-    }), 
-    )
+    def create_standard_board(team1, team2, distance):
+        team1_area = [[Tile('rook', team1), Tile('knight', team1), Tile('bishop', team1), Tile('queen', team1), Tile('king', team1), Tile('bishop', team1), Tile('knight', team1), Tile('rook', team1)],
+                    [Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1)]]
+        
+        team2_area = [[Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2)],
+                    [Tile('rook', team2), Tile('knight', team2), Tile('bishop', team2), Tile('queen', team2), Tile('king', team2), Tile('bishop', team2), Tile('knight', team2), Tile('rook', team2)]]
 
-    DOUBLE_CHESS = (Board(board_state=
-        [[Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE), Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE)],
-        [Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE)],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK)],
-        [Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK), Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK)]]
-    ), RuleEngine(RuleSet.rule_dict(RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 4, False, 'queen'))))
-
-    WHITE_SIDE = Team('white', (0, 1))
-
-    L_CHESS = (Board(board_state=
-        [[Tile('rook', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('knight', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('bishop', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('king', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('queen', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('bishop', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('knight', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [Tile('rook', WHITE_SIDE), Tile('pawn', WHITE_SIDE), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-        [None, None, None, None, None, None, None, None, Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK)],
-        [None, None, None, None, None, None, None, None, Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK)]]
-    ),
-    RuleEngine(rulesets=RuleSet.rule_dict(
-        RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 6, False, 'queen')
-    ),
-    promotion_tiles={
-        'white': ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12', 'p16'],
-        'black': ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'i1', 'j1', 'k1', 'l1', 'm1', 'n1', 'o1', 'p1']
-    }))
-
-    FOUR_TEAM_CHESS = (Board(board_state=
-        [[None, None, None, Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE), None, None, None],
-        [None, None, None, Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), None, None, None],
-        [None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), None, None, None],
-        [Tile('rook', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('rook', tp.GREEN)],
-        [Tile('knight', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('knight', tp.GREEN)],
-        [Tile('bishop', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('bishop', tp.GREEN)],
-        [Tile('queen', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('queen', tp.GREEN)],
-        [Tile('king', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('king', tp.GREEN)],
-        [Tile('bishop', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('bishop', tp.GREEN)],
-        [Tile('knight', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('knight', tp.GREEN)],
-        [Tile('rook', tp.RED), Tile('pawn', tp.RED), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.GREEN), Tile('rook', tp.GREEN)],
-        [None, None, None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), None, None, None],
-        [None, None, None, Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), None, None, None],
-        [None, None, None, Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK), None, None, None]]
-    ),
-    RuleEngine(
-        teams=Team.team_dict(tp.WHITE, tp.RED, tp.BLACK, tp.GREEN),
-        promotion_tiles={
-            'white': ['d14', 'e14', 'f14', 'g14', 'h14', 'i14', 'j14', 'k14'],
-            'red': ['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11'],
-            'black': ['d1', 'e1', 'f1', 'g1', 'h1', 'i1', 'j1', 'k1'],
-            'green': ['a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11']
-        },
-        turn_order=['white', 'red', 'black', 'green']
-    ))
+        empty_area = [[Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()]] * distance
+        return team1_area + empty_area + team2_area

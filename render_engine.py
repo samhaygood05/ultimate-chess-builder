@@ -194,7 +194,7 @@ class RenderEngine:
                         tile_x = (mouse_x // tile_size) - 1
                         tile_y = len(self.board.board) - 1 - (mouse_y // tile_size)
 
-                        if tile_x in range(len(self.board.board)) and tile_y in range(len(self.board.board[0])):
+                        if tile_x in range(len(self.board.board[0])) and tile_y in range(len(self.board.board)):
                             hovered_tile = Board.index_to_tile(tile_y, tile_x)
                             legal_moves = self.rule_engine.get_legal_moves(hovered_tile, self.board)
                     else:
@@ -241,6 +241,7 @@ class RenderEngine:
 
             # Update the screen
             pygame.display.update()
+            
 
         # Quit Pygame
         pygame.quit()
