@@ -77,6 +77,32 @@ class RenderEngine:
                     image.fill((0, 0, 0))
                     screen.blit(image, (x, y))
 
+    def render_static(self, legal_moves, selected_tile, tile_size=90, color1=(255, 255, 255), color2=(128, 128, 128), text_color=(0, 0, 0), highlight_color=(255, 255, 0, 128)):
+        # Set the size of the window and the size of each tile
+        WINDOW_SIZE = ((len(self.board.board[0])+1)*tile_size, (len(self.board.board)+1)*tile_size)
+
+        # Create the window
+        screen = pygame.display.set_mode(WINDOW_SIZE)
+
+        # Create a font for drawing text
+        font = pygame.font.Font(None, 24)
+        # Draw the chessboard
+        self.draw_board(screen, font, color1, color2, text_color, tile_size)
+
+        # Highlight Valid Moves
+        self.highlight_tiles(legal_moves, screen, highlight_color, tile_size)
+
+         # Highlight Selected Tile
+        self.highlight_tiles(selected_tile, screen, (0, 255, 255, 128), tile_size)
+
+        # Draw Pieces
+        self.draw_pieces(screen, tile_size)
+
+        # Update the screen
+        pygame.display.update()
+        
+        return screen
+    
     def render_board(self, tile_size=90, color1=(255, 255, 255), color2=(128, 128, 128), text_color=(0, 0, 0), highlight_color=(255, 255, 0, 128), illegal_moves=False):
 
         # Initialize Pygame
