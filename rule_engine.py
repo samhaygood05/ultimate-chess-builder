@@ -1,3 +1,19 @@
+'''
+Copyright 2023 Sam A. Haygood
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
+
 from rule_set import RuleSet
 from board import Board
 from team import Team
@@ -5,9 +21,9 @@ from tile import Tile
 from team import TeamPresets as tp
 
 class RuleEngine:
-    def __init__(self, rulesets: dict = None, teams = None, turn_order = None):
+    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None):
         self.rulesets = RuleSet.rule_dict(
-            RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen', 0),
+            RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
             RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
             RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
             RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
@@ -20,6 +36,13 @@ class RuleEngine:
             self.teams = Team.team_dict(tp.WHITE, tp.BLACK)
         else:
             self.teams = teams
+        if promotion_tiles == None:
+            self.promotion_tiles = {
+                'white': ['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'],
+                'black': ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']
+            }
+        else:
+            self.promotion_tiles = promotion_tiles
         if turn_order == None:
             self.turn_order = ['white', 'black']
         else:
@@ -80,7 +103,7 @@ class RuleEngine:
                                         except:
                                             break
             # Logic for Capture Set
-            for delta_row, delta_col in captureset:
+            for delta_forward, delta_right in captureset:
                 delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
 
                 new_row = row + delta[0]
@@ -159,9 +182,9 @@ class RuleEngine:
         new_board[start[0]][start[1]] = Tile()
 
         ruleset = self.rulesets[piece]
-        promotion, promotion_row = ruleset.promotion, ruleset.promotion_row
+        promotion = ruleset.promotion
         if promotion != None:
-            if (end[0] == len(board.board) - 1 - promotion_row and board.current_team == tp.WHITE) or (end[0] == promotion_row and board.current_team == tp.BLACK):
+            if end_tile in self.promotion_tiles[board.current_team]:
                 new_board[end[0]][end[1]] = new_board[end[0]][end[1]].promote(promotion)
 
         next_index = self.turn_order.index(board.current_team) + 1

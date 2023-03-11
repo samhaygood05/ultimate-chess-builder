@@ -40,14 +40,16 @@ class Tile:
         return self
     
     def get_file_name(self):
-        if self.team == tp.WHITE:
+        if self.team.name == 'white':
             file = f"images/white/{self.piece}.png"
-        elif self.team == tp.BLACK:
+        elif self.team.name == 'black':
             file = f"images/black/{self.piece}.png"
+        else:
+            file = f"images/colored/{self.piece}.png"
         return file
 
     def __str__(self) -> str:
-        return f"{self.team} {self.piece}"
+        return f"{self.team.name} {self.piece}"
 
     def __repr__(self) -> str:
-        return f"{self.team} {self.piece}"
+        return f"{self.team.name} {self.piece}"

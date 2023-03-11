@@ -1,3 +1,19 @@
+'''
+Copyright 2023 Sam A. Haygood
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
+
 from rule_engine import RuleEngine
 from board import Board
 from team import TeamPresets as tp
@@ -65,12 +81,45 @@ class RenderEngine:
                             filename = piece.get_file_name()
                             try:
                                 image = pygame.transform.scale(pygame.image.load(filename), (tile_size, tile_size))
+                                if piece.team.name not in ['white', 'black']:
+                                    pixels = pygame.PixelArray(image)
+                                    # Iterate over every pixel                                             
+                                    for x in range(image.get_width()):
+                                        for y in range(image.get_height()):
+                                            # Turn the pixel data into an RGB tuple
+                                            rgb = image.unmap_rgb(pixels[x][y])
+                                            # Get a new color object using the RGB tuple and convert to HSLA
+                                            color = pygame.Color(*rgb)
+                                            h, s, l, a = color.hsla
+                                            # shifts hue (or however much you want) and wrap to under 360
+                                            color.hsla = (int(h) + piece.team.hue) % 360, int(s), int(l), int(a)
+                                            # Assign directly to the pixel
+                                            pixels[x][y] = color
+                                    # The old way of closing a PixelArray object
+                                    del pixels
                             except:
                                 image = pygame.Surface((tile_size*0.75, tile_size*0.75))
-                                if piece.team == tp.BLACK:
+                                if piece.team.name == 'black':
                                     image.fill((0, 0, 0))
-                                else:
+                                elif piece.team.name == 'white':
                                     image.fill((255, 255, 200))
+                                else:
+                                    image.fill((255, 0, 0))
+                                    pixels = pygame.PixelArray(image)
+                                    # Iterate over every pixel                                             
+                                    for x_img in range(image.get_width()):
+                                        for y_img in range(image.get_height()):
+                                            # Turn the pixel data into an RGB tuple
+                                            rgb = image.unmap_rgb(pixels[x_img][y_img])
+                                            # Get a new color object using the RGB tuple and convert to HSLA
+                                            color = pygame.Color(*rgb)
+                                            h, s, l, a = color.hsla
+                                            # shifts hue (or however much you want) and wrap to under 360
+                                            color.hsla = (int(h) + piece.team.hue) % 360, int(s), int(l), int(a)
+                                            # Assign directly to the pixel
+                                            pixels[x_img][y_img] = color
+                                    # The old way of closing a PixelArray object
+                                    del pixels
                             screen.blit(image, (x, y))
                 else:
                     image = pygame.Surface((tile_size, tile_size))
@@ -161,9 +210,10 @@ class RenderEngine:
                             clicked_tile = Board.index_to_tile(tile_y, tile_x)
 
                             if not selected_tile:
-                                if self.board.get_tile(clicked_tile).piece != 'empty':
-                                    selected_tile = [clicked_tile]
-                                    legal_moves = self.rule_engine.get_legal_moves(clicked_tile, self.board)
+                                if self.board.get_tile(clicked_tile) != None:
+                                    if self.board.get_tile(clicked_tile).piece != 'empty':
+                                        selected_tile = [clicked_tile]
+                                        legal_moves = self.rule_engine.get_legal_moves(clicked_tile, self.board)
                             else:
                                 self.board = self.rule_engine.play_move(self.board, selected_tile[0], clicked_tile, illegal_moves)
                                 turn = f"{self.board.current_team}'s turn"

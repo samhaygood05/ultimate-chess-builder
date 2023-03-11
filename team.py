@@ -15,11 +15,14 @@ limitations under the License.
 '''
 
 class Team:
-    def __init__(self, name, direction, allies):
+    def __init__(self, name, direction, allies=None, hue=0):
         self.name = name
         self.direction = direction
         self.perpendicular = (direction[1], -direction[0])
-        self.allies = ['empty'] + allies
+        self.allies = ['empty', name]
+        if allies != None:
+            self.allies.extend(allies)
+        self.hue = hue
 
     def team_dict(*teams):
         dictionary: dict = {}
@@ -27,7 +30,15 @@ class Team:
             dictionary.update({team.name: team})
         return dictionary
 
+    def add_ally(self, ally):
+        self.allies.append(ally)
+
+    def set_direction(self, direction):
+        self.direction = direction
+        self.perpendicular = (direction[1], -direction[0])
+        return self
+
 class TeamPresets:
-    WHITE = Team('white', (1, 0), ['white'])
-    BLACK = Team('black', (-1, 0), ['black'])
-    EMPTY = Team('empty', (0,0), [])
+    WHITE = Team('white', (1, 0))
+    BLACK = Team('black', (-1, 0))
+    EMPTY = Team('empty', (0,0))
