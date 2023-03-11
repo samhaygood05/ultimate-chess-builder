@@ -1,6 +1,8 @@
 from board import Board
+from render_engine import RenderEngine
+from rule_engine import RuleEngine
 from variants import Variants
 
 if __name__ == "__main__":
-    board = Board(board_state=Variants.WILDEBEAST_CHESS, rulesets=Variants.WILDEBEAST_RULESET)
-    board.render_board(tile_size=50)
+    renderer = RenderEngine(*Variants.WILDERBEAST)
+    renderer.render_board(tile_size=50)

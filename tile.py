@@ -45,3 +45,9 @@ class Tile:
         elif self.team == Team.BLACK:
             file = f"images/black/{self.piece}.png"
         return file
+
+    def __str__(self) -> str:
+        return f"{self.team} {self.piece}"
+
+    def __repr__(self) -> str:
+        return f"{self.team} {self.piece}"
