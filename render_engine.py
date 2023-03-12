@@ -133,10 +133,13 @@ class RenderEngine:
         WINDOW_SIZE = ((len(self.board.board[0])+1)*tile_size, (len(self.board.board)+1)*tile_size)
 
         # Create the window
-        screen = pygame.display.set_mode(WINDOW_SIZE)
+        screen = pygame.Surface(WINDOW_SIZE)
 
         # Create a font for drawing text
         font = pygame.font.Font(None, 24)
+        
+        screen.fill(color1)
+        
         # Draw the chessboard
         self.draw_board(screen, font, color1, color2, text_color, tile_size)
 
@@ -148,9 +151,6 @@ class RenderEngine:
 
         # Draw Pieces
         self.draw_pieces(screen, tile_size)
-
-        # Update the screen
-        pygame.display.update()
 
         return screen
     
@@ -208,7 +208,7 @@ class RenderEngine:
                         tile_x = (mouse_x // tile_size) - 1
                         tile_y = len(self.board.board) - 1 - (mouse_y // tile_size)
                         
-                        if tile_x in range(len(self.board.board)) and tile_y in range(len(self.board.board[0])):
+                        if tile_x in range(len(self.board.board[0])) and tile_y in range(len(self.board.board)):
                             clicked_tile = Board.index_to_tile(tile_y, tile_x)
 
                             if not selected_tile:
