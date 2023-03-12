@@ -1,11 +1,11 @@
-from boards.board import Board
-from render_engine import RenderEngine
+from boards.square_board import SquareBoard as Board
+from render_engines.square_render_engine import SquareRenderEngine
 from rule_set import RuleSet
-from rule_engines.rule_engine import RuleEngine
+from rule_engines.square_rule_engine import SquareRuleEngine
 from variants import Variants
 from tile import Tile
-from team import Team, TeamPresets as tp
+from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
-    renderer = RenderEngine(*Variants.load('2team_4player'))
+    renderer = SquareRenderEngine()
     renderer.render_board(tile_size=90)

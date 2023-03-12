@@ -14,3 +14,7 @@ class AbstractBoard(ABC):
     @abstractmethod
     def get_tile(self, tile):
         pass
+
+    @abstractmethod
+    def copy(self):
+        pass

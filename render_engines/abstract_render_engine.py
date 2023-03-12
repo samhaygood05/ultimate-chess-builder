@@ -15,22 +15,20 @@ limitations under the License.
 '''
 
 from abc import ABC, abstractmethod
-from boards.abstract_board import AbstractBoard
-from rule_set import RuleSet
 
-class AbstractRuleEngine(ABC):
+class AbstractRenderEngine(ABC):
     @abstractmethod
-    def add_ruleset(self, tile, board: AbstractBoard, ruleset: RuleSet):
+    def draw_board(self):
         pass
 
     @abstractmethod
-    def get_legal_moves(self, tile, board: AbstractBoard):
+    def highlight_tiles(self):
         pass
 
     @abstractmethod
-    def is_in_check(self, team):
+    def draw_pieces(self):
         pass
 
     @abstractmethod
-    def play_move(self, board: AbstractBoard, start_tile, end_tile, illegal_moves=False):
+    def render_board(self):
         pass

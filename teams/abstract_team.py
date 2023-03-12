@@ -15,22 +15,18 @@ limitations under the License.
 '''
 
 from abc import ABC, abstractmethod
-from boards.abstract_board import AbstractBoard
-from rule_set import RuleSet
 
-class AbstractRuleEngine(ABC):
-    @abstractmethod
-    def add_ruleset(self, tile, board: AbstractBoard, ruleset: RuleSet):
-        pass
+class AbstractTeam(ABC):
+    def team_dict(*teams):
+        dictionary: dict = {}
+        for team in teams:
+            dictionary.update({team.name: team})
+        return dictionary
 
-    @abstractmethod
-    def get_legal_moves(self, tile, board: AbstractBoard):
-        pass
+    def add_ally(self, ally):
+        self.allies.append(ally)
 
-    @abstractmethod
-    def is_in_check(self, team):
-        pass
-
-    @abstractmethod
-    def play_move(self, board: AbstractBoard, start_tile, end_tile, illegal_moves=False):
-        pass
+    def set_direction(self, direction):
+        self.direction = direction
+        self.perpendicular = (direction[1], -direction[0])
+        return self

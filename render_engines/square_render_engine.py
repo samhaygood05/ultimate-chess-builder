@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from rule_engines.rule_engine import RuleEngine
-from boards.board import Board
+from render_engines.abstract_render_engine import AbstractRenderEngine
+from rule_engines.square_rule_engine import SquareRuleEngine as RuleEngine
+from boards.square_board import SquareBoard as Board
 import pygame
 import os
 
-class RenderEngine:
+class SquareRenderEngine(AbstractRenderEngine):
     def __init__(self, board: Board = None, rule_engine: RuleEngine = None):
         if board == None:
             self.board = Board()

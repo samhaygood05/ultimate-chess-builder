@@ -16,8 +16,9 @@ limitations under the License.
 
 import os
 from PIL import Image
+from teams.abstract_team import AbstractTeam
 
-class Team:
+class Team(AbstractTeam):
     def __init__(self, name, direction, allies=None, hue=0):
         self.name = name
         self.direction = direction
@@ -50,20 +51,6 @@ class Team:
                     edited_img = Image.merge('RGBA', (r, g, b, a))
 
                     edited_img.save(f'{img_folder}\\{self.name}\\{piece_name}')
-
-    def team_dict(*teams):
-        dictionary: dict = {}
-        for team in teams:
-            dictionary.update({team.name: team})
-        return dictionary
-
-    def add_ally(self, ally):
-        self.allies.append(ally)
-
-    def set_direction(self, direction):
-        self.direction = direction
-        self.perpendicular = (direction[1], -direction[0])
-        return self
 
 class TeamPresets:
     WHITE = Team('white', (1, 0))

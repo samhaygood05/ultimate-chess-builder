@@ -15,11 +15,11 @@ limitations under the License.
 '''
 
 from tile import Tile
-from team import Team
-from team import TeamPresets as tp
+from teams.team import Team
+from teams.team import TeamPresets as tp
 from rule_set import RuleSet
-from rule_engines.rule_engine import RuleEngine
-from boards.board import Board
+from rule_engines.square_rule_engine import SquareRuleEngine
+from boards.square_board import SquareBoard
 import pickle
 import os
 
@@ -41,8 +41,6 @@ class Variants:
         print(f'{name} Preset Loaded')
         return preset
     
-    
-
 
     MISC_FANTASY_RULESET = RuleSet.rule_dict(
         RuleSet('zebra', [(3, 2), (3, -2), (-3, 2), (-3, -2), (2, 3), (2, -3), (-2, 3), (-2, -3)], None, False, 0, False),
