@@ -15,6 +15,7 @@ limitations under the License.
 '''
 
 from abc import ABC, abstractmethod
+import pygame as pg
 
 class AbstractRenderEngine(ABC):
     @abstractmethod
@@ -30,5 +31,8 @@ class AbstractRenderEngine(ABC):
         pass
 
     @abstractmethod
-    def render_board(self):
+    def main_loop(self):
         pass
+
+    def quit(self):
+        pg.quit()

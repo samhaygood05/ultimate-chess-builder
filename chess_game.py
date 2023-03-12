@@ -7,5 +7,4 @@ from tile import Tile
 from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
-    renderer = SquareRenderEngine()
-    renderer.render_board(tile_size=90)
+    renderer = SquareRenderEngine((640, 400))
