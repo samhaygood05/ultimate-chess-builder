@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+from boards.abstract_board import AbstractBoard
 from tile import Tile
-from team import TeamPresets as tp
+from teams.team import TeamPresets as tp
 import copy
 
-class Board:
+class SquareBoard(AbstractBoard):
     def __init__(self, current_team='white', board_state=None):
         if board_state == None:
             self.board = [[Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE)],
@@ -35,25 +36,16 @@ class Board:
         self.current_team = current_team
 
     def copy(self):
-        copy_board = Board(copy.deepcopy(self.board), self.white_first, self.rulesets)
+        copy_board = SquareBoard(copy.deepcopy(self.board), self.white_first, self.rulesets)
         return copy_board
 
-    def tile_to_index(tile):
-        column = tile[0]
-        row = int(tile[1:])-1
-        column_index = ord(column.lower()) - 97
-        return row, column_index
-
-    def index_to_tile(row, column):
-        return chr(column + 97) + str(row+1)
-
     def get_tile(self, tile):
-        row, column = Board.tile_to_index(tile)
+        row, column = SquareBoard.tile_to_index(tile)
         try:
             return self.board[row][column]
         except:
             print('Not a valid tile')
-            return Tile()
+            return None
 
     def __str__(self) -> str:
         return f"{self.board}"

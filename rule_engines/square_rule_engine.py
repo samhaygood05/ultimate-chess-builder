@@ -15,12 +15,13 @@ limitations under the License.
 '''
 
 from rule_set import RuleSet
-from board import Board
-from team import Team
+from boards.square_board import SquareBoard as Board
+from teams.team import Team
 from tile import Tile
-from team import TeamPresets as tp
+from teams.team import TeamPresets as tp
+from rule_engines.abstract_rule_engine import AbstractRuleEngine
 
-class RuleEngine:
+class SquareRuleEngine(AbstractRuleEngine):
     def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None):
         self.rulesets = RuleSet.rule_dict(
             RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
@@ -44,7 +45,7 @@ class RuleEngine:
         else:
             self.promotion_tiles = promotion_tiles
         if turn_order == None:
-            self.turn_order = self.teams.keys()
+            self.turn_order = list(self.teams.keys())
         else:
             self.turn_order = turn_order
 
@@ -71,7 +72,6 @@ class RuleEngine:
             # Logic for Moveset
             for delta_forward, delta_right in moveset:
                 delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
-
 
                 new_row = row + delta[0]
                 new_col = col + delta[1]
@@ -144,8 +144,7 @@ class RuleEngine:
             return legal_moves
 
         # All Other Pieces
-        for name, rules in self.rulesets.items():
-            legal_moves.extend(self.add_ruleset(tile, board, rules))
+        legal_moves.extend(self.add_ruleset(tile, board, self.rulesets[piece.piece]))
 
         return legal_moves
 
