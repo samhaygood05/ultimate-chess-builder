@@ -44,7 +44,7 @@ class RuleEngine:
         else:
             self.promotion_tiles = promotion_tiles
         if turn_order == None:
-            self.turn_order = ['white', 'black']
+            self.turn_order = self.teams.keys()
         else:
             self.turn_order = turn_order
 
