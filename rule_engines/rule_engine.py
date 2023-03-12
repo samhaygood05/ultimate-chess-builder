@@ -15,12 +15,13 @@ limitations under the License.
 '''
 
 from rule_set import RuleSet
-from board import Board
+from boards.board import Board
 from team import Team
 from tile import Tile
 from team import TeamPresets as tp
+from rule_engines.abstract_rule_engine import AbstractRuleEngine
 
-class RuleEngine:
+class RuleEngine(AbstractRuleEngine):
     def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None):
         self.rulesets = RuleSet.rule_dict(
             RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),

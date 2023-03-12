@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from rule_engine import RuleEngine
-from board import Board
+from rule_engines.rule_engine import RuleEngine
+from boards.board import Board
 import pygame
 import os
 

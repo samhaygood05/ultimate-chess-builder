@@ -1,7 +1,7 @@
-from board import Board
+from boards.board import Board
 from render_engine import RenderEngine
 from rule_set import RuleSet
-from rule_engine import RuleEngine
+from rule_engines.rule_engine import RuleEngine
 from variants import Variants
 from tile import Tile
 from team import Team, TeamPresets as tp
