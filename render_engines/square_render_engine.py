@@ -82,7 +82,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                             filename = piece.get_file_name()
                             try:
                                 image = pygame.transform.scale(pygame.image.load(filename), (tile_size, tile_size))
-                                img_folder = f'{os.getcwd()}\\images'
+                                img_folder = f'{os.getcwd()}/images'.replace('\\', '/')
                                 teams = os.listdir(img_folder) 
                                 if piece.team.name not in teams:
                                     pixels = pygame.PixelArray(image)
