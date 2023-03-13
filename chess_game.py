@@ -1,10 +1,14 @@
 from boards.square_board import SquareBoard
-from render_engines.square_render_engine import SquareRenderEngine
+from boards.poly_board import PolyBoard
+from render_engines.timetravel_render_engine import TimeTravelRenderEngine
 from rule_set import RuleSet
 from rule_engines.square_rule_engine import SquareRuleEngine
 from variants import Variants
 from tile import Tile
-from teams.team import Team, TeamPresets as tp
+from teams.time_team import TimeTeam, TimeTeamPresets as tp
 
 if __name__ == "__main__":
-    renderer = SquareRenderEngine((800, 600), *Variants.load('moat_defense'))
+    renderer = TimeTravelRenderEngine((800, 600), PolyBoard(boards={
+        (0, 0): SquareBoard(board_state=Variants.create_standard_board(tp.WHITE, tp.BLACK))
+    },
+    active_boards=[(0,0)]))

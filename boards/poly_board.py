@@ -10,8 +10,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from abstract_board import AbstractBoard
-from square_board import SquareBoard
+from boards.abstract_board import AbstractBoard
+from boards.square_board import SquareBoard
 from tile import Tile
 from variants import Variants
 from teams.time_team import TimeTeamPresets as tp
@@ -20,7 +20,7 @@ import copy
 class PolyBoard(AbstractBoard):
     def __init__(self, boards: dict = None, active_boards: list=None):
         if boards == None:
-            self.boards = {(0,0): Variants.create_standard_board(tp.WHITE, tp.BLACK, 4)}
+            self.boards = {(0,0): SquareBoard(board_state=Variants.create_standard_board(tp.WHITE, tp.BLACK, 4))}
         else:
             self.boards = boards
         if active_boards == None:
@@ -28,13 +28,12 @@ class PolyBoard(AbstractBoard):
         else:
             self.active_boards = active_boards
 
-    def get_tile(self, tile_loc):
-        board, tile = tile_loc
+    def get_tile(self, board, tile):
         try:
             return self.boards[board].get_tile(tile)
         except:
             print('Not a valid board')
-            return None
+            return Tile()
         
     def add_board(self, board_loc: tuple, board: AbstractBoard):
         self.boards[board_loc] = board

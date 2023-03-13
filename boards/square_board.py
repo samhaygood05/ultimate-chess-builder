@@ -36,7 +36,7 @@ class SquareBoard(AbstractBoard):
         self.current_team = current_team
 
     def copy(self):
-        copy_board = SquareBoard(copy.deepcopy(self.board), self.white_first, self.rulesets)
+        copy_board = SquareBoard(self.current_team, copy.deepcopy(self.board))
         return copy_board
 
     def get_tile(self, tile):
@@ -45,7 +45,7 @@ class SquareBoard(AbstractBoard):
             return self.board[row][column]
         except:
             print('Not a valid tile')
-            return None
+            return Tile()
 
     def __str__(self) -> str:
         return f"{self.board}"

@@ -26,7 +26,7 @@ import numpy as np
 import colorsys
 
 class SquareRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False):
+    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False, render_on_init=True):
         if board == None:
             self.board = Board()
         else:
@@ -38,19 +38,20 @@ class SquareRenderEngine(AbstractRenderEngine):
 
         self.illegal_moves = illegal_moves
 
-        pygame.init()
-        self.display = screen_size
-        pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
-        self.screen_ratio = self.display[0]/self.display[1]
-        self.zoom = 1.0
+        if render_on_init:
+            pygame.init()
+            self.display = screen_size
+            pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
+            self.screen_ratio = self.display[0]/self.display[1]
+            self.zoom = 1.0
 
-        rows = len(self.board.board) / 20
-        columns = len(self.board.board[0]) / 20
+            rows = len(self.board.board) / 20
+            columns = len(self.board.board[0]) / 20
 
-        gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
-        glRotatef(180, 1, 0, 0)
-        self.camera_pos = [-columns, -rows, 0.5]
-        self.main_loop()
+            gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
+            glRotatef(180, 1, 0, 0)
+            self.camera_pos = [-columns, -rows, 0.5]
+            self.main_loop()
     
     def draw_board(self, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         rows = len(self.board.board)
@@ -84,10 +85,10 @@ class SquareRenderEngine(AbstractRenderEngine):
 
         square_size = 1 / 10
         outer_border_width = 0.3 * square_size # set the width of the border
+        inner_border_width = 0.05 * square_size # set the width of the border
         board_width = columns * square_size
         board_height = rows * square_size
 
-        inner_border_width = 0.05 * square_size # set the width of the border
 
         # Draw the border rectangle
         glColor3f(0, 0, 0) # black
@@ -153,7 +154,7 @@ class SquareRenderEngine(AbstractRenderEngine):
 
                 quads[tile_name] = quad
         
-        return quads, (4*inner_border_width + 2*outer_border_width + board_width, 4*inner_border_width + 2*outer_border_width + board_height)
+        return quads
 
     def draw_pieces(self, x=0, y=0, z=0):
         rows = len(self.board.board)
@@ -235,7 +236,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                         else:
                             self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves)
                             selected_tile = ''
-                    if event.button == 3:
+                    elif event.button == 3:
                         selected_tile = ''
                     elif event.button == 4 and self.zoom > 0.2:
                         self.zoom -= 1 * self.zoom
@@ -263,7 +264,7 @@ class SquareRenderEngine(AbstractRenderEngine):
             else: 
                 highlight_tiles = []
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
-            quads, board_size = self.draw_board(highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
+            quads = self.draw_board(highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
             self.draw_pieces(*self.camera_pos)
             pygame.display.flip()
 

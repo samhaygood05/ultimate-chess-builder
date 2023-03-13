@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from abstract_rule_engine import AbstractRuleEngine
+from rule_engines.abstract_rule_engine import AbstractRuleEngine
 from boards.poly_board import PolyBoard
 from rule_set import RuleSet
 from teams.time_team import TimeTeam, TimeTeamPresets as tp
 from tile import Tile
+import copy
 
 class TimeTravelRuleEngine(AbstractRuleEngine):
     def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None):
@@ -75,7 +76,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             self.turn_order = turn_order
 
     def add_ruleset(self, tile_loc, board: PolyBoard, ruleset: RuleSet):
-        piece = board.get_tile(tile)
+        piece = board.get_tile(*tile_loc)
         team = piece.team
         allies = team.allies
         piece_name = ruleset.name
@@ -86,7 +87,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         multimove = ruleset.multimove
 
         if captureset == None:
-            captureset == moveset
+            captureset = moveset
 
         (board_row, board_col), tile = tile_loc
 
@@ -179,7 +180,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             return legal_moves
 
     def get_legal_moves(self, tile_loc, board: PolyBoard):
-        piece = board.get_tile(tile_loc)
+        piece = board.get_tile(*tile_loc)
         legal_moves = []
 
         # None Tiles
@@ -213,7 +214,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         
         current_team = board.boards[start_board].current_team
 
-        if board.get_tile(start_tile_loc).team.name != current_team:
+        if board.get_tile(*start_tile_loc).team.name != current_team:
             print("You Can't Play Your Opponent's Pieces")
             return board
         
@@ -221,12 +222,12 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         start = PolyBoard.tile_to_index(start_tile)
         end = PolyBoard.tile_to_index(end_tile)
 
-        piece = board.get_tile(start_tile_loc).piece
+        piece = board.get_tile(*start_tile_loc).piece
 
         if start_board == end_board:
             board.active_boards.remove(start_board)
-            new_board = board.boards[start_board]
-            new_board[end[0]][end[1]] = board.get_tile(start_tile).moved()
+            new_board = copy.deepcopy(board.boards[start_board].board)
+            new_board[end[0]][end[1]] = board.boards[start_board].get_tile(start_tile).moved()
             new_board[start[0]][start[1]] = Tile()
 
 
@@ -251,8 +252,8 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
 
             return board.add_board(new_board_loc, new_board_object)
         else:
-            new_start_board = board.boards[start_board]
-            new_end_board = board.boards[end_board]
+            new_start_board = copy.deepcopy(board.boards[start_board].board)
+            new_end_board = copy.deepcopy(board.boards[end_board].board)
 
             board.active_boards.remove(start_board)
             try:
@@ -260,7 +261,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             except:
                 pass
 
-            new_end_board[end[0]][end[1]] = board.get_tile(start_tile).moved()
+            new_end_board[end[0]][end[1]] = board.boards[start_board].get_tile(start_tile).moved()
             new_start_board[start[0]][start[1]] = Tile()
 
             ruleset = self.rulesets[piece]
@@ -276,10 +277,10 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                 next_team = self.turn_order[0]
 
             new_start_board_loc = (start_board[0], start_board[1] + 1)
-            time_direction = board.get_tile(start_tile_loc).team.time_direction
+            time_direction = board.get_tile(*start_tile_loc).team.time_direction
             new_end_board_loc = (end_board[0], end_board[1] + 1)
-            while board.boards.has_key(new_end_board_loc):
-                new_end_board_loc[0] -= time_direction
+            while new_end_board_loc[0] in [board_a[0] for board_a in board.boards.keys()]:
+                new_end_board_loc = (new_end_board_loc[0] - time_direction, new_end_board_loc[1])
 
             new_start_board_object = board.boards[start_board].copy()
             new_start_board_object.current_team = next_team
