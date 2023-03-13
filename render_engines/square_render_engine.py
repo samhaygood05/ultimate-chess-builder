@@ -17,8 +17,11 @@ limitations under the License.
 from render_engines.abstract_render_engine import AbstractRenderEngine
 from rule_engines.square_rule_engine import SquareRuleEngine as RuleEngine
 from boards.square_board import SquareBoard as Board
-import pygame as pg
+import pygame
+from PIL import Image
+from pygame.locals import *
 from OpenGL.GL import *
+from OpenGL.GLU import *
 import numpy as np
 
 class SquareRenderEngine(AbstractRenderEngine):
@@ -32,45 +35,144 @@ class SquareRenderEngine(AbstractRenderEngine):
         else:
             self.rule_engine = rule_engine
 
-        # Initialize Pygame
-        pg.init()
+        pygame.init()
+        self.display = screen_size
+        pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
 
-        # Define OpenGL version
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
-
-        pg.display.set_mode(screen_size, pg.OPENGL|pg.DOUBLEBUF)
-
-        self.clock = pg.time.Clock()
-
-        glClearColor(1.0, 1.0, 1.0, 1.0)
-
+        gluPerspective(45, (self.display[0]/self.display[1]), 0.1, 100.0)
+        glTranslatef(0, 0, -2)  # move camera back along Z-axis
+        glRotatef(180, 1, 0, 0)
+        self.camera_pos = [0, 0, -2]
         self.main_loop()
     
-    def draw_board(self, screen, font, color1, color2, text_color, tile_size):
-        pass
+    def draw_board(self, x=0, y=0):
+        rows = len(self.board.board)
+        columns = len(self.board.board[0])
+
+        square_size = 1 / 10
+        border_width = 0.3 * square_size # set the width of the border
+        board_width = columns * square_size
+        board_height = rows * square_size
+
+        # Draw the border rectangle
+        glColor3f(0.3, 0.3, 0.3) # black
+        glBegin(GL_QUADS)
+        glVertex3f(x - border_width, y - border_width, 0.0)
+        glVertex3f(x + board_width + border_width, y - border_width, 0.0)
+        glVertex3f(x + board_width + border_width, y + board_height + border_width, 0.0)
+        glVertex3f(x - border_width, y + board_height + border_width, 0.0)
+        glEnd()
+
+        # Draw the checkerboard
+        for row in range(rows):
+            for column in range(columns):
+                if (row + column) % 2 == 0:
+                    color = (0.9, 0.9, 0.9) # light gray
+                else:
+                    color = (0.7, 0.7, 0.7) # dark gray
+
+                x_pos = x + column * square_size
+                y_pos = y + row * square_size
+
+                glBegin(GL_QUADS)
+                glColor3fv(color)
+                glVertex3fv((x_pos, y_pos, 0))
+                glVertex3fv((x_pos + square_size, y_pos, 0))
+                glVertex3fv((x_pos + square_size, y_pos + square_size, 0))
+                glVertex3fv((x_pos, y_pos + square_size, 0))
+                glEnd()
 
     def highlight_tiles(self, tiles, screen, highlight_color=(255, 255, 0, 128), tile_size=90):
         pass
 
-    def draw_pieces(self, screen, tile_size=90):
-        pass
+    def draw_pieces(self, x=0, y=0):
+        rows = len(self.board.board)
+        columns = len(self.board.board[0])
+
+        square_size = 1 / 10
+
+        for row in range(rows):
+            for column in range(columns):
+                tile = Board.index_to_tile(row, column)
+                piece = self.board.get_tile(tile)
+                if piece is None:
+                    piece_path = f'images/blank.png'
+                elif piece.piece is 'empty':
+                    continue
+                else:
+                    piece_path = piece.get_file_name()
+                try:
+                    with open(piece_path, "rb") as file:
+                        img = Image.open(file).convert('RGBA')
+                        piece_data = np.asarray(img, dtype=np.uint8)
+
+                        x_pos = x + column * square_size
+                        y_pos = y + (rows - row - 1) * square_size
+
+                        texture_id = glGenTextures(1)
+                        glEnable(GL_BLEND);
+                        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                        glBindTexture(GL_TEXTURE_2D, texture_id)
+                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, piece_data)
+                        glGenerateMipmap(GL_TEXTURE_2D)
+
+                        glEnable(GL_TEXTURE_2D)
+                        glBegin(GL_QUADS)
+                        glTexCoord2f(0.0, 0.0)
+                        glVertex3fv((x_pos, y_pos, -0.01))
+                        glTexCoord2f(1.0, 0.0)
+                        glVertex3fv((x_pos + square_size, y_pos, -0.01))
+                        glTexCoord2f(1.0, 1.0)
+                        glVertex3fv((x_pos + square_size, y_pos + square_size, -0.01))
+                        glTexCoord2f(0.0, 1.0)
+                        glVertex3fv((x_pos, y_pos + square_size, -0.01))
+                        glEnd()
+                        glDisable(GL_TEXTURE_2D)
+                except FileNotFoundError:
+                    pass
     
-    def main_loop(self) -> None:
-        running = True
-        while running:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    running == False
+    def main_loop(self):
 
-            glClear(GL_COLOR_BUFFER_BIT)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
 
-            pg.display.flip()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 4 and self.camera_pos[2] < -0.2:
+                        self.camera_pos[2] -= 1 * (self.camera_pos[2] / 10)
+                    elif event.button == 5:
+                        self.camera_pos[2] += 1 * (self.camera_pos[2] / 10)
 
-            #timing
-            self.clock.tick(60)
-        self.quit()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_w]:
+                self.camera_pos[1] += 0.3 * (self.camera_pos[2] / 10)
+            if keys[pygame.K_s]:
+                self.camera_pos[1] -= 0.3 * (self.camera_pos[2] / 10)
+            if keys[pygame.K_a]:
+                self.camera_pos[0] -= 0.3 * (self.camera_pos[2] / 10)
+            if keys[pygame.K_d]:
+                self.camera_pos[0] += 0.3 * (self.camera_pos[2] / 10)
+            if keys[pygame.K_e] and self.camera_pos[2] < -0.2:
+                self.camera_pos[2] -= 0.5 * (self.camera_pos[2] / 10)
+            if keys[pygame.K_q]:
+                self.camera_pos[2] += 0.5 * (self.camera_pos[2] / 10)
+
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glLoadIdentity()
+            gluPerspective(45, (self.display[0]/self.display[1]), 0.1, 100.0)
+            glTranslatef(self.camera_pos[0], self.camera_pos[1], self.camera_pos[2])
+            glRotatef(180, 1, 0, 0)
+            glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
+            self.draw_board()
+            self.draw_pieces()
+            pygame.display.flip()
+            pygame.time.wait(10)
 
 
     def __str__(self) -> str:
