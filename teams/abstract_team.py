@@ -26,6 +26,12 @@ class AbstractTeam(ABC):
     def add_ally(self, ally):
         self.allies.append(ally)
 
+    def remove_ally(self, ally):
+        try:
+            self.allies.remove(ally)
+        except:
+            pass
+
     def set_direction(self, direction):
         self.direction = direction
         self.perpendicular = (direction[1], -direction[0])
