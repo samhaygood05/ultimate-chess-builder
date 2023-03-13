@@ -23,13 +23,22 @@ class AbstractRenderEngine(ABC):
         pass
 
     @abstractmethod
-    def highlight_tiles(self):
-        pass
-
-    @abstractmethod
     def draw_pieces(self):
         pass
 
     @abstractmethod
     def main_loop(self):
         pass
+
+    def TransformVec3(vecA,mat44):
+        vecB = [0, 0, 0, 0]
+        for i0 in range(0, 4):
+            vecB[i0] = vecA[0] * mat44[0*4+i0] + vecA[1] * mat44[1*4+i0] + vecA[2] * mat44[2*4+i0] + mat44[3*4+i0]
+        return [vecB[0]/vecB[3], vecB[1]/vecB[3], vecB[2]/vecB[3]]
+
+    def TestRec(prjMat, mpos, display, zoom, quad):
+        ll_ndc = AbstractRenderEngine.TransformVec3(quad[0], prjMat)
+        tr_ndc = AbstractRenderEngine.TransformVec3(quad[2], prjMat)
+        ndc = [(2.0 * mpos[0]/display[0] - 1.0)*zoom, (2.0 * mpos[1]/display[0] - display[1]/display[0])*zoom]
+        inRect = 1 if (ndc[0]>=ll_ndc[0] and ndc[0]<=tr_ndc[0] and ndc[1]>=ll_ndc[1] and ndc[1]<=tr_ndc[1] ) else 0
+        return inRect
