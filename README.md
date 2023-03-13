@@ -11,4 +11,4 @@
  - A menu to choose which board to play games on
  - Hexagonal Boards
  - Time Travel Mode
- 
+ - Check Logic

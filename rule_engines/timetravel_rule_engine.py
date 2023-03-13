@@ -224,9 +224,11 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         piece = board.get_tile(start_tile_loc).piece
 
         if start_board == end_board:
+            board.active_boards.remove(start_board)
             new_board = board.boards[start_board]
             new_board[end[0]][end[1]] = board.get_tile(start_tile).moved()
             new_board[start[0]][start[1]] = Tile()
+
 
             ruleset = self.rulesets[piece]
             promotion = ruleset.promotion
@@ -245,10 +247,18 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             new_board_object.current_team = next_team
             new_board_object.board = new_board
 
+            board.active_boards.append(new_board_loc)
+
             return board.add_board(new_board_loc, new_board_object)
         else:
             new_start_board = board.boards[start_board]
             new_end_board = board.boards[end_board]
+
+            board.active_boards.remove(start_board)
+            try:
+                board.active_boards.remove(end_board)
+            except:
+                pass
 
             new_end_board[end[0]][end[1]] = board.get_tile(start_tile).moved()
             new_start_board[start[0]][start[1]] = Tile()
@@ -278,6 +288,9 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             new_end_board_object = board.boards[end_board].copy()
             new_end_board_object.current_team = next_team
             new_end_board_object.board = new_end_board
+
+            board.active_boards.append(new_start_board_loc)
+            board.active_boards.append(new_end_board_loc)
 
             return board.add_board(new_start_board_loc, new_start_board_object).add_board(new_end_board_loc, new_end_board_object)
 

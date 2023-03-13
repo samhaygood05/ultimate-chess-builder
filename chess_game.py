@@ -7,4 +7,4 @@ from tile import Tile
 from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
-    renderer = SquareRenderEngine((800, 600), SquareBoard(board_state=Variants.create_standard_board(tp.WHITE, tp.BLACK, 6)))
+    renderer = SquareRenderEngine((800, 600), *Variants.load('moat_defense'))

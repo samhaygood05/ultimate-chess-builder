@@ -48,7 +48,7 @@ class Variants:
         RuleSet('unicorn', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, True)
     )
 
-    def create_standard_board(team1, team2, distance):
+    def create_standard_board(team1, team2, distance=4):
         team1_area = [[Tile('rook', team1), Tile('knight', team1), Tile('bishop', team1), Tile('queen', team1), Tile('king', team1), Tile('bishop', team1), Tile('knight', team1), Tile('rook', team1)],
                     [Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1)]]
         
