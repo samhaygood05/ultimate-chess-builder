@@ -63,6 +63,8 @@ class SquareRenderEngine(AbstractRenderEngine):
         glVertex3f(x - border_width, y + board_height + border_width, 0.0)
         glEnd()
 
+
+        quads = []
         # Draw the checkerboard
         for row in range(rows):
             for column in range(columns):
@@ -81,6 +83,9 @@ class SquareRenderEngine(AbstractRenderEngine):
                 glVertex3fv((x_pos + square_size, y_pos + square_size, 0))
                 glVertex3fv((x_pos, y_pos + square_size, 0))
                 glEnd()
+                quads.append(((x_pos, y_pos, 0), (x_pos + square_size, y_pos, 0), (x_pos + square_size, y_pos + square_size, 0), (x_pos, y_pos + square_size, 0)))
+        
+        return tuple(quads)
 
     def highlight_tiles(self, tiles, screen, highlight_color=(255, 255, 0, 128), tile_size=90):
         pass
@@ -150,13 +155,13 @@ class SquareRenderEngine(AbstractRenderEngine):
                         self.camera_pos[2] += 1 * (self.camera_pos[2] / 10)
 
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_w]:
+            if (keys[pygame.K_w] or keys[pygame.K_UP]):
                 self.camera_pos[1] += 0.3 * (self.camera_pos[2] / 10)
-            if keys[pygame.K_s]:
+            if (keys[pygame.K_s] or keys[pygame.K_DOWN]):
                 self.camera_pos[1] -= 0.3 * (self.camera_pos[2] / 10)
-            if keys[pygame.K_a]:
+            if (keys[pygame.K_a] or keys[pygame.K_LEFT]):
                 self.camera_pos[0] -= 0.3 * (self.camera_pos[2] / 10)
-            if keys[pygame.K_d]:
+            if (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
                 self.camera_pos[0] += 0.3 * (self.camera_pos[2] / 10)
             if keys[pygame.K_e] and self.camera_pos[2] < -0.2:
                 self.camera_pos[2] -= 0.5 * (self.camera_pos[2] / 10)
@@ -169,7 +174,7 @@ class SquareRenderEngine(AbstractRenderEngine):
             glTranslatef(self.camera_pos[0], self.camera_pos[1], self.camera_pos[2])
             glRotatef(180, 1, 0, 0)
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
-            self.draw_board()
+            quads = self.draw_board()
             self.draw_pieces()
             pygame.display.flip()
             pygame.time.wait(10)

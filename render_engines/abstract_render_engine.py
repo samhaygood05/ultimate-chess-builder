@@ -33,6 +33,3 @@ class AbstractRenderEngine(ABC):
     @abstractmethod
     def main_loop(self):
         pass
-
-    def quit(self):
-        pg.quit()
