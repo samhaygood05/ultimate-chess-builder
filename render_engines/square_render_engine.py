@@ -26,7 +26,7 @@ import numpy as np
 import colorsys
 
 class SquareRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None):
+    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False):
         if board == None:
             self.board = Board()
         else:
@@ -36,16 +36,20 @@ class SquareRenderEngine(AbstractRenderEngine):
         else:
             self.rule_engine = rule_engine
 
+        self.illegal_moves = illegal_moves
+
         pygame.init()
         self.display = screen_size
         pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
         self.screen_ratio = self.display[0]/self.display[1]
         self.zoom = 1.0
 
-        #gluPerspective(45, self.screen_ratio, 0.1, 100.0)
+        rows = len(self.board.board) / 20
+        columns = len(self.board.board[0]) / 20
+
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
-        self.camera_pos = [-0.4, -0.4, 0.5]
+        self.camera_pos = [-columns, -rows, 0.5]
         self.main_loop()
     
     def draw_board(self, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
@@ -62,7 +66,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         elif current_team.name == 'black':
             board_color = (0.3, 0.3, 0.3)
         else:
-            board_color = colorsys.hsv_to_rgb(current_team.hue/360.0, 0.5, 0.3)
+            board_color = colorsys.hsv_to_rgb(current_team.hue/360.0, 0.5, 0.5)
 
         highlight_color=(1.0, 1.0, 0.0)
         selected_color=(1.0, 0.0, 0.0)
@@ -149,7 +153,7 @@ class SquareRenderEngine(AbstractRenderEngine):
 
                 quads[tile_name] = quad
         
-        return quads
+        return quads, (4*inner_border_width + 2*outer_border_width + board_width, 4*inner_border_width + 2*outer_border_width + board_height)
 
     def draw_pieces(self, x=0, y=0, z=0):
         rows = len(self.board.board)
@@ -163,10 +167,15 @@ class SquareRenderEngine(AbstractRenderEngine):
                 piece = self.board.get_tile(tile)
                 if piece is None:
                     piece_path = f'images/blank.png'
+                    piece_color = (0.0, 0.0, 0.0)
                 elif piece.piece == 'empty':
                     continue
                 else:
                     piece_path = piece.get_file_name()
+                    if piece.team.name in ['white', 'black']:
+                        piece_color = (1.0, 1.0, 1.0)
+                    else:
+                        piece_color = colorsys.hsv_to_rgb(self.rule_engine.teams[piece.team.name].hue/360.0, 1.0, 1.0)
                 try:
                     with open(piece_path, "rb") as file:
                         img = Image.open(file).convert('RGBA')
@@ -177,6 +186,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                         z_pos = z - 0.01
 
                         texture_id = glGenTextures(1)
+                        glColor3fv(piece_color)
                         glEnable(GL_BLEND);
                         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                         glBindTexture(GL_TEXTURE_2D, texture_id)
@@ -207,6 +217,12 @@ class SquareRenderEngine(AbstractRenderEngine):
         hover_tile = ''
         selected_tile = ''
         while True:
+
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+            glLoadIdentity()
+            gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
+            glRotatef(180, 1, 0, 0)
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -217,7 +233,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                         if selected_tile == '':
                             selected_tile = hover_tile
                         else:
-                            self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile)
+                            self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves)
                             selected_tile = ''
                     if event.button == 3:
                         selected_tile = ''
@@ -246,13 +262,8 @@ class SquareRenderEngine(AbstractRenderEngine):
                 highlight_tiles = self.rule_engine.get_legal_moves(hover_tile, self.board)
             else: 
                 highlight_tiles = []
-            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-            glLoadIdentity()
-            #gluPerspective(45, self.screen_ratio, 0.1, 100.0)
-            gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
-            glRotatef(180, 1, 0, 0)
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
-            quads = self.draw_board(highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
+            quads, board_size = self.draw_board(highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
             self.draw_pieces(*self.camera_pos)
             pygame.display.flip()
 

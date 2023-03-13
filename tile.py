@@ -42,7 +42,10 @@ class Tile:
         return self
     
     def get_file_name(self):
-        return f"images/{self.team.name}/{self.piece}.png"
+        if self.team.name == 'black':
+            return f"images/{self.team.name}/{self.piece}.png"
+        else:
+            return f"images/white/{self.piece}.png"
 
     def __str__(self) -> str:
         return f"{self.team.name} {self.piece}"

@@ -21,17 +21,17 @@ from rule_set import RuleSet
 from rule_engines.square_rule_engine import SquareRuleEngine
 from boards.square_board import SquareBoard
 import pickle
-import os
+import copy
 
 class Variants:
-    def save(name, board_state, rule_engine):
+    def save(name, board, rule_engine):
         path = f"presets/{name}.chess"
         try:
             with open(path, 'xb') as f:
-                pickle.dump((board_state, rule_engine), f)
+                pickle.dump((board, rule_engine), f)
         except:
             with open(path, 'wb') as f:
-                pickle.dump((board_state, rule_engine), f)
+                pickle.dump((board, rule_engine), f)
         print('Preset Saved')
 
     def load(name):
@@ -55,5 +55,7 @@ class Variants:
         team2_area = [[Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2)],
                     [Tile('rook', team2), Tile('knight', team2), Tile('bishop', team2), Tile('queen', team2), Tile('king', team2), Tile('bishop', team2), Tile('knight', team2), Tile('rook', team2)]]
 
-        empty_area = [[Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()]] * distance
+        empty_area_row = [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()]
+
+        empty_area = [copy.deepcopy(empty_area_row) for i in range(distance)]
         return team1_area + empty_area + team2_area
