@@ -46,3 +46,5 @@ class PolyBoard(AbstractBoard):
             copy_boards[loc] = board
 
         copy_board = PolyBoard(copy_boards, copy.deepcopy(self.active_boards))
+
+        return copy_board

@@ -39,6 +39,27 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
 
         self.illegal_moves = illegal_moves
 
+        imgs = dict()
+        black_imgs = dict()
+        white_imgs = dict()
+        for piece in self.rule_engine.rulesets.keys():
+            black_files = f"images/black/{piece}.png"
+            white_files = f"images/white/{piece}.png"
+            with open(white_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                white_imgs[piece] = img
+            with open(black_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                black_imgs[piece] = img
+        with open('images/blank.png', "rb") as file:
+            blank = Image.open(file).convert('RGBA')
+        
+        imgs['black'] = black_imgs
+        imgs['white'] = white_imgs
+        imgs['blank'] = blank
+
+        self.imgs = imgs
+
         pygame.init()
         self.display = screen_size
         pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
@@ -105,7 +126,7 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             rows = len(board.board) / 20
             cols = len(board.board[0]) / 20
             board_center = (cols + 2*inner_border_width + outer_border_width, rows + 2*inner_border_width + outer_border_width)
-            SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z)
+            SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
 
     def main_loop(self):
         hover_tile = (('a', 'a'), '')

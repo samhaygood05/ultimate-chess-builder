@@ -7,9 +7,9 @@
  - Custom pieces with their own movement rules
  - Time Travel Mode (Similar to 5D Chess)
 
- ## To Do List
+ ## To Do List (in no particular order)
  - A GUI for editing and creating custom boards and pieces
  - A menu to choose which board to play games on
  - Hexagonal Boards
- - Optimize Time Travel Mode
+ - General Optimizations
  - Check Logic

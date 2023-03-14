@@ -38,7 +38,32 @@ class SquareRenderEngine(AbstractRenderEngine):
 
         self.illegal_moves = illegal_moves
 
+        self.imgs = dict()
+
         if render_on_init:
+
+            imgs = dict()
+            black_imgs = dict()
+            white_imgs = dict()
+            for piece in self.rule_engine.rulesets.keys():
+                black_files = f"images/black/{piece}.png"
+                white_files = f"images/white/{piece}.png"
+                with open(white_files, "rb") as file:
+                    img = Image.open(file).convert('RGBA')
+                    white_imgs[piece] = img
+                with open(black_files, "rb") as file:
+                    img = Image.open(file).convert('RGBA')
+                    black_imgs[piece] = img
+            with open('images/blank.png', "rb") as file:
+                blank = Image.open(file).convert('RGBA')
+            
+            imgs['black'] = black_imgs
+            imgs['white'] = white_imgs
+            imgs['blank'] = blank
+
+            self.imgs = imgs
+
+
             pygame.init()
             self.display = screen_size
             pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
@@ -156,9 +181,10 @@ class SquareRenderEngine(AbstractRenderEngine):
         
         return quads
 
-    def draw_pieces(self, x=0, y=0, z=0):
+    def draw_pieces(self, imgs, pos):
         rows = len(self.board.board)
         columns = len(self.board.board[0])
+        x, y, z = pos
 
         square_size = 1 / 10
 
@@ -167,49 +193,51 @@ class SquareRenderEngine(AbstractRenderEngine):
                 tile = Board.index_to_tile(row, column)
                 piece = self.board.get_tile(tile)
                 if piece is None:
-                    piece_path = f'images/blank.png'
+                    img = imgs['blank']
+                    piece_data = np.asarray(img, dtype=np.uint8)
                     piece_color = (0.0, 0.0, 0.0)
                 elif piece.piece == 'empty':
                     continue
                 else:
-                    piece_path = piece.get_file_name()
+                    if piece.team.name == 'black':
+                        img = imgs['black'][piece.piece]
+                        piece_data = np.asarray(img, dtype=np.uint8)
+                    else:
+                        img = imgs['white'][piece.piece]
+                        piece_data = np.asarray(img, dtype=np.uint8)
                     if piece.team.name in ['white', 'black']:
                         piece_color = (1.0, 1.0, 1.0)
                     else:
                         piece_color = colorsys.hsv_to_rgb(self.rule_engine.teams[piece.team.name].hue/360.0, 1.0, 1.0)
                 try:
-                    with open(piece_path, "rb") as file:
-                        img = Image.open(file).convert('RGBA')
-                        piece_data = np.asarray(img, dtype=np.uint8)
+                    x_pos = x + column * square_size
+                    y_pos = y + (rows - row - 1) * square_size
+                    z_pos = z - 0.01
 
-                        x_pos = x + column * square_size
-                        y_pos = y + (rows - row - 1) * square_size
-                        z_pos = z - 0.01
+                    texture_id = glGenTextures(1)
+                    glColor3fv(piece_color)
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    glBindTexture(GL_TEXTURE_2D, texture_id)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, piece_data)
+                    glGenerateMipmap(GL_TEXTURE_2D)
 
-                        texture_id = glGenTextures(1)
-                        glColor3fv(piece_color)
-                        glEnable(GL_BLEND);
-                        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                        glBindTexture(GL_TEXTURE_2D, texture_id)
-                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-                        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, piece_data)
-                        glGenerateMipmap(GL_TEXTURE_2D)
-
-                        glEnable(GL_TEXTURE_2D)
-                        glBegin(GL_QUADS)
-                        glTexCoord2f(0.0, 0.0)
-                        glVertex3fv((x_pos, y_pos, z_pos))
-                        glTexCoord2f(1.0, 0.0)
-                        glVertex3fv((x_pos + square_size, y_pos, z_pos))
-                        glTexCoord2f(1.0, 1.0)
-                        glVertex3fv((x_pos + square_size, y_pos + square_size, z_pos))
-                        glTexCoord2f(0.0, 1.0)
-                        glVertex3fv((x_pos, y_pos + square_size, z_pos))
-                        glEnd()
-                        glDisable(GL_TEXTURE_2D)
+                    glEnable(GL_TEXTURE_2D)
+                    glBegin(GL_QUADS)
+                    glTexCoord2f(0.0, 0.0)
+                    glVertex3fv((x_pos, y_pos, z_pos))
+                    glTexCoord2f(1.0, 0.0)
+                    glVertex3fv((x_pos + square_size, y_pos, z_pos))
+                    glTexCoord2f(1.0, 1.0)
+                    glVertex3fv((x_pos + square_size, y_pos + square_size, z_pos))
+                    glTexCoord2f(0.0, 1.0)
+                    glVertex3fv((x_pos, y_pos + square_size, z_pos))
+                    glEnd()
+                    glDisable(GL_TEXTURE_2D)
                 except FileNotFoundError:
                     pass
     
@@ -265,7 +293,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                 highlight_tiles = []
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
             quads = self.draw_board(highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
-            self.draw_pieces(*self.camera_pos)
+            self.draw_pieces(self.imgs, self.camera_pos)
             pygame.display.flip()
 
             prjMat = (GLfloat * 16)()
