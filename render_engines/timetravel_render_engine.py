@@ -103,7 +103,7 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             rows = len(board.board) / 20
             cols = len(board.board[0]) / 20
             board_center = (cols + 2*inner_border_width + outer_border_width, rows + 2*inner_border_width + outer_border_width)
-            quads = SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_board(highlight, select, hover, x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z)
+            quads = SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_board(self.zoom, highlight, select, hover, x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z)
             board_quads[board_loc] = quads
         
         return board_quads
@@ -126,7 +126,7 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             rows = len(board.board) / 20
             cols = len(board.board[0]) / 20
             board_center = (cols + 2*inner_border_width + outer_border_width, rows + 2*inner_border_width + outer_border_width)
-            SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
+            SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
 
     def main_loop(self):
         hover_tile = (('a', 'a'), '')

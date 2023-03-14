@@ -20,7 +20,7 @@ from teams.team import TeamPresets as tp
 import copy
 
 class SquareBoard(AbstractBoard):
-    def __init__(self, current_team='white', board_state=None):
+    def __init__(self, current_team='white', board_state=None, royal_tiles=None):
         if board_state == None:
             self.board = [[Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE)],
                             [Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE)],
@@ -34,6 +34,16 @@ class SquareBoard(AbstractBoard):
             self.board = board_state
 
         self.current_team = current_team
+
+        if royal_tiles == None:
+            self.royal_tiles = []
+            for row in range(len(self.board)):
+                for col in range(len(self.board[0])):
+                    if self.board[row][col] != None:
+                        if self.board[row][col].is_royal:
+                            self.royal_tiles.append(SquareBoard.index_to_tile(row, col))
+        else:
+            self.royal_tiles = royal_tiles
 
     def copy(self):
         copy_board = SquareBoard(self.current_team, copy.deepcopy(self.board))

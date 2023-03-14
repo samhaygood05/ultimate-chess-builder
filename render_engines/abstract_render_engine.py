@@ -40,5 +40,13 @@ class AbstractRenderEngine(ABC):
         ll_ndc = AbstractRenderEngine.TransformVec3(quad[0], prjMat)
         tr_ndc = AbstractRenderEngine.TransformVec3(quad[2], prjMat)
         ndc = [(2.0 * mpos[0]/display[0] - 1.0)*zoom, (2.0 * mpos[1]/display[0] - display[1]/display[0])*zoom]
-        inRect = 1 if (ndc[0]>=ll_ndc[0] and ndc[0]<=tr_ndc[0] and ndc[1]>=ll_ndc[1] and ndc[1]<=tr_ndc[1] ) else 0
+        inRect = 1 if (ndc[0]>=ll_ndc[0] and ndc[0]<=tr_ndc[0] and ndc[1]>=ll_ndc[1] and ndc[1]<=tr_ndc[1]) else 0
         return inRect
+
+    def is_on_screen(quad, prjMat, zoom):
+        on_screen = False
+        for vertex in quad:
+            projected_vertex = AbstractRenderEngine.TransformVec3(vertex, prjMat)
+            if -zoom<=projected_vertex[0]<=zoom and -zoom<=projected_vertex[1]<=zoom:
+                on_screen = True
+        return on_screen

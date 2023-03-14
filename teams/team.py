@@ -19,18 +19,18 @@ from PIL import Image
 from teams.abstract_team import AbstractTeam
 
 class Team(AbstractTeam):
-    def __init__(self, name, direction, allies=None, hue=0):
+    def __init__(self, name, direction, allies=None, color=(1.0, 1.0, 1.0)):
         self.name = name
         self.direction = direction
         self.perpendicular = (direction[1], -direction[0])
         self.allies = ['empty', name]
         if allies != None:
             self.allies.extend(allies)
-        self.hue = hue
+        self.color = color
 
 class TeamPresets:
     WHITE = Team('white', (1, 0))
-    BLACK = Team('black', (-1, 0))
-    RED = Team('red', (0, 1))
-    GREEN = Team('green', (0, -1), hue=120)
+    BLACK = Team('black', (-1, 0), (0.0, 0.0, 0.0))
+    RED = Team('red', (0, 1), color=(1.0, 0.0, 0.0))
+    GREEN = Team('green', (0, -1), color=(0.0, 1.0, 0.0))
     EMPTY = Team('empty', (0,0))

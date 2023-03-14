@@ -78,7 +78,9 @@ class SquareRenderEngine(AbstractRenderEngine):
             self.camera_pos = [-columns, -rows, 0.5]
             self.main_loop()
     
-    def draw_board(self, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
+    def draw_board(self, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
+        prjMat = (GLfloat * 16)()
+        glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
         rows = len(self.board.board)
         columns = len(self.board.board[0])
 
@@ -92,7 +94,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         elif current_team.name == 'black':
             board_color = (0.3, 0.3, 0.3)
         else:
-            board_color = colorsys.hsv_to_rgb(current_team.hue/360.0, 0.5, 0.5)
+            board_color = colorsys.hsv_to_rgb(colorsys.rgb_to_hsv(*current_team.color)[0], 0.5, 0.5)
 
         highlight_color=(1.0, 1.0, 0.0)
         selected_color=(1.0, 0.0, 0.0)
@@ -113,8 +115,19 @@ class SquareRenderEngine(AbstractRenderEngine):
         inner_border_width = 0.05 * square_size # set the width of the border
         board_width = columns * square_size
         board_height = rows * square_size
+        quads = dict()
 
+        outer_border = (
+            (x - outer_border_width - inner_border_width, y - outer_border_width - inner_border_width, z),
+            (x + board_width + outer_border_width + inner_border_width, y - outer_border_width - inner_border_width, z),
+            (x + board_width + outer_border_width + inner_border_width, y + board_height + outer_border_width + inner_border_width, z),
+            (x - outer_border_width - inner_border_width, y + board_height + outer_border_width + inner_border_width, z)
+        )
 
+        on_screen = SquareRenderEngine.is_on_screen(outer_border, prjMat, zoom)
+        if not on_screen:
+            return quads
+        
         # Draw the border rectangle
         glColor3f(0, 0, 0) # black
         glBegin(GL_QUADS)
@@ -123,6 +136,17 @@ class SquareRenderEngine(AbstractRenderEngine):
         glVertex3f(x + board_width + outer_border_width + inner_border_width, y + board_height + outer_border_width + inner_border_width, z)
         glVertex3f(x - outer_border_width - inner_border_width, y + board_height + outer_border_width + inner_border_width, z)
         glEnd()
+
+        team_border = (
+            (x - outer_border_width, y - outer_border_width, z),
+            (x + board_width + outer_border_width, y - outer_border_width, z),
+            (x + board_width + outer_border_width, y + board_height + outer_border_width, z),
+            (x - outer_border_width, y + board_height + outer_border_width, z)
+        )
+
+        on_screen = SquareRenderEngine.is_on_screen(team_border, prjMat, zoom)
+        if not on_screen:
+            return quads
 
         # Draw the border rectangle
         glColor3f(*board_color) # black
@@ -133,6 +157,17 @@ class SquareRenderEngine(AbstractRenderEngine):
         glVertex3f(x - outer_border_width, y + board_height + outer_border_width, z)
         glEnd()
 
+        inner_border = (
+            (x - inner_border_width, y - inner_border_width, z),
+            (x + board_width + inner_border_width, y - inner_border_width, z),
+            (x + board_width + inner_border_width, y + board_height + inner_border_width, z),
+            (x - inner_border_width, y + board_height + inner_border_width, z)
+        )
+
+        on_screen = SquareRenderEngine.is_on_screen(inner_border, prjMat, zoom)
+        if not on_screen:
+            return quads
+
         # Draw the border rectangle
         glColor3f(0, 0, 0) # black
         glBegin(GL_QUADS)
@@ -142,11 +177,18 @@ class SquareRenderEngine(AbstractRenderEngine):
         glVertex3f(x - inner_border_width, y + board_height + inner_border_width, z)
         glEnd()
 
-
-        quads = dict()
         # Draw the checkerboard
         for row in range(rows):
             for column in range(columns):
+
+                x_pos = x + column * square_size
+                y_pos = y + row * square_size
+                z_pos = z
+                quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
+                on_screen = SquareRenderEngine.is_on_screen(quad, prjMat, zoom)
+                if not on_screen:
+                    continue
+
                 if (row + column) % 2 == 0:
                     color = (0.9, 0.9, 0.9) # light gray
                 else:
@@ -161,18 +203,12 @@ class SquareRenderEngine(AbstractRenderEngine):
                 elif (rows - 1 - row, column) in tile_hover:
                     color = ((color[0] + hover_color[0])/2, (color[1] + hover_color[1])/2, (color[2] + hover_color[2])/2)
 
-                x_pos = x + column * square_size
-                y_pos = y + row * square_size
-                z_pos = z
-
-                quad = ((x_pos, y_pos, 0), (x_pos + square_size, y_pos, 0), (x_pos + square_size, y_pos + square_size, 0), (x_pos, y_pos + square_size, 0))
-
                 glBegin(GL_QUADS)
                 glColor3fv(color)
-                glVertex3fv((x_pos, y_pos, z_pos))
-                glVertex3fv((x_pos + square_size, y_pos, z_pos))
-                glVertex3fv((x_pos + square_size, y_pos + square_size, z_pos))
-                glVertex3fv((x_pos, y_pos + square_size, z_pos))
+                glVertex3fv(quad[0])
+                glVertex3fv(quad[1])
+                glVertex3fv(quad[2])
+                glVertex3fv(quad[3])
                 glEnd()
 
                 tile_name = Board.index_to_tile(rows - 1 - row, column)
@@ -181,21 +217,34 @@ class SquareRenderEngine(AbstractRenderEngine):
         
         return quads
 
-    def draw_pieces(self, imgs, pos):
+    def draw_pieces(self, imgs, zoom, pos):
+        prjMat = (GLfloat * 16)()
+        glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
         rows = len(self.board.board)
         columns = len(self.board.board[0])
         x, y, z = pos
 
         square_size = 1 / 10
-
         for row in range(rows):
             for column in range(columns):
+
+                x_pos = x + column * square_size
+                y_pos = y + (rows - row - 1) * square_size
+                z_pos = z - 0.01
+                quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
+                on_screen = SquareRenderEngine.is_on_screen(quad, prjMat, zoom)
+                if not on_screen:
+                    continue
+                
                 tile = Board.index_to_tile(row, column)
                 piece = self.board.get_tile(tile)
                 if piece is None:
                     img = imgs['blank']
                     piece_data = np.asarray(img, dtype=np.uint8)
                     piece_color = (0.0, 0.0, 0.0)
+                    secondary_piece_color = (0.0, 0.0, 0.0)
+                    trinary_piece_color = (0.0, 0.0, 0.0)
+                    quadinary_piece_color = (0.0, 0.0, 0.0)
                 elif piece.piece == 'empty':
                     continue
                 else:
@@ -208,38 +257,65 @@ class SquareRenderEngine(AbstractRenderEngine):
                     if piece.team.name in ['white', 'black']:
                         piece_color = (1.0, 1.0, 1.0)
                     else:
-                        piece_color = colorsys.hsv_to_rgb(self.rule_engine.teams[piece.team.name].hue/360.0, 1.0, 1.0)
-                try:
-                    x_pos = x + column * square_size
-                    y_pos = y + (rows - row - 1) * square_size
-                    z_pos = z - 0.01
+                        piece_color = piece.team.color
 
-                    texture_id = glGenTextures(1)
-                    glColor3fv(piece_color)
-                    glEnable(GL_BLEND);
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                    glBindTexture(GL_TEXTURE_2D, texture_id)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, piece_data)
-                    glGenerateMipmap(GL_TEXTURE_2D)
+                    if piece.secondary_team.name == 'black':
+                        if piece.team.name == 'black':
+                            secondary_piece_color = (1.0, 1.0, 1.0)
+                        else:
+                            secondary_piece_color = (0.0, 0.0, 0.0)
+                    elif piece.secondary_team.name == 'white':
+                        secondary_piece_color = (1.0, 1.0, 1.0)
+                    else:
+                        secondary_piece_color = piece.secondary_team.color
 
-                    glEnable(GL_TEXTURE_2D)
-                    glBegin(GL_QUADS)
-                    glTexCoord2f(0.0, 0.0)
-                    glVertex3fv((x_pos, y_pos, z_pos))
-                    glTexCoord2f(1.0, 0.0)
-                    glVertex3fv((x_pos + square_size, y_pos, z_pos))
-                    glTexCoord2f(1.0, 1.0)
-                    glVertex3fv((x_pos + square_size, y_pos + square_size, z_pos))
-                    glTexCoord2f(0.0, 1.0)
-                    glVertex3fv((x_pos, y_pos + square_size, z_pos))
-                    glEnd()
-                    glDisable(GL_TEXTURE_2D)
-                except FileNotFoundError:
-                    pass
+                    if piece.trinary_team.name == 'black':
+                        if piece.team.name == 'black':
+                            trinary_piece_color = (1.0, 1.0, 1.0)
+                        else:
+                            trinary_piece_color = (0.0, 0.0, 0.0)
+                    elif piece.trinary_team.name == 'white':
+                        trinary_piece_color = (1.0, 1.0, 1.0)
+                    else:
+                        trinary_piece_color = piece.trinary_team.color
+
+                    if piece.quadinary_team.name == 'black':
+                        if piece.team.name == 'black':
+                            quadinary_piece_color = (1.0, 1.0, 1.0)
+                        else:
+                            quadinary_piece_color = (0.0, 0.0, 0.0)
+                    elif piece.secondary_team.name == 'white':
+                        quadinary_piece_color = (1.0, 1.0, 1.0)
+                    else:
+                        quadinary_piece_color = piece.quadinary_team.color
+
+                texture_id = glGenTextures(1)
+                glColor3fv(piece_color)
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glBindTexture(GL_TEXTURE_2D, texture_id)
+                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, piece_data)
+                glGenerateMipmap(GL_TEXTURE_2D)
+
+                glEnable(GL_TEXTURE_2D)
+                glBegin(GL_QUADS)
+                glTexCoord2f(0.0, 0.0)
+                glVertex3fv(quad[0])
+                glColor3fv(trinary_piece_color)
+                glTexCoord2f(1.0, 0.0)
+                glVertex3fv(quad[1])
+                glColor3fv(secondary_piece_color)
+                glTexCoord2f(1.0, 1.0)
+                glVertex3fv(quad[2])
+                glColor3fv(quadinary_piece_color)
+                glTexCoord2f(0.0, 1.0)
+                glVertex3fv(quad[3])
+                glEnd()
+                glDisable(GL_TEXTURE_2D)
     
     def main_loop(self):
 
@@ -292,8 +368,8 @@ class SquareRenderEngine(AbstractRenderEngine):
             else: 
                 highlight_tiles = []
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
-            quads = self.draw_board(highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
-            self.draw_pieces(self.imgs, self.camera_pos)
+            quads = self.draw_board(self.zoom, highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
+            self.draw_pieces(self.imgs, self.zoom, self.camera_pos)
             pygame.display.flip()
 
             prjMat = (GLfloat * 16)()

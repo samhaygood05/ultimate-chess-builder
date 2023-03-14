@@ -6,7 +6,8 @@ from rule_set import RuleSet
 from rule_engines.square_rule_engine import SquareRuleEngine
 from variants import Variants
 from tile import Tile
-from teams.time_team import TimeTeam, TimeTeamPresets as tp
+from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
-    renderer = TimeTravelRenderEngine((800, 600))
+
+    renderer = SquareRenderEngine((800, 600), *Variants.load('4player_rebel_knights'))

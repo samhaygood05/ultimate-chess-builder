@@ -18,16 +18,30 @@ from PIL import Image
 import os
 
 class Tile:
-    def __init__(self, piece=None, team=None, is_royal=None, has_moved=False):
+    def __init__(self, piece=None, team=None, secondary_team=None, trinary_team=None, quadinary_team=None, is_royal=None, has_moved=False):
         if piece == None:
             self.piece = 'empty'
         else:
             self.piece = piece
         self.has_moved = has_moved
+
         if team == None:
             self.team = tp.EMPTY
         else:
             self.team = team
+        if secondary_team == None:
+            self.secondary_team = self.team
+        else:
+            self.secondary_team = secondary_team
+        if trinary_team == None:
+            self.trinary_team = self.team
+        else:
+            self.trinary_team = trinary_team
+        if quadinary_team == None:
+            self.quadinary_team = self.secondary_team
+        else:
+            self.quadinary_team = quadinary_team
+        
         if is_royal == None:
             self.is_royal = (self.piece == 'king')
         else:
@@ -41,11 +55,17 @@ class Tile:
         self.piece = promotion
         return self
     
-    def get_file_name(self):
-        if self.team.name == 'black':
-            return f"images/{self.team.name}/{self.piece}.png"
-        else:
-            return f"images/white/{self.piece}.png"
+    def get_allies_intersection(self):
+        return list(set(self.team.allies) & set(self.secondary_team.allies) & set(self.trinary_team.allies) & set(self.quadinary_team.allies))
+
+    def get_allies_union(self):
+        return list(set(self.team.allies).union(set(self.secondary_team.allies)).union(set(self.trinary_team.allies)).union(set(self.quadinary_team.allies)))
+
+    def is_allies(self, allies):
+        return list(set(self.get_team_names()) & set(allies))
+
+    def get_team_names(self):
+        return [self.team.name, self.secondary_team.name, self.trinary_team.name, self.quadinary_team.name]
 
     def __str__(self) -> str:
         return f"{self.team.name} {self.piece}"

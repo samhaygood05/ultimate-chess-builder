@@ -18,7 +18,10 @@ class RuleSet:
     def __init__(self, name, moveset, captureset, first_move, first_move_boost, multimove, promotion=None):
         self.name = name
         self.moveset = moveset
-        self.captureset = captureset
+        if captureset == None:
+            self.captureset = moveset
+        else:
+            self.captureset = captureset
         self.first_move = first_move
         self.first_move_boost = first_move_boost
         self.multimove = multimove
@@ -29,6 +32,10 @@ class RuleSet:
         for ruleset in rulesets:
             dictionary.update({ruleset.name: ruleset})
         return dictionary
+
+    def reverse_captureset(self):
+        inverse_captureset = [tuple(-x for x in move) for move in self.captureset]
+        return inverse_captureset
 
     def __str__(self):
         return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}"

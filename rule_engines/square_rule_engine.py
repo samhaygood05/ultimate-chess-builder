@@ -22,7 +22,7 @@ from teams.team import TeamPresets as tp
 from rule_engines.abstract_rule_engine import AbstractRuleEngine
 
 class SquareRuleEngine(AbstractRuleEngine):
-    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None):
+    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, mutliteam_capture_ally = False):
         self.rulesets = RuleSet.rule_dict(
             RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
             RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
@@ -48,11 +48,16 @@ class SquareRuleEngine(AbstractRuleEngine):
             self.turn_order = list(self.teams.keys())
         else:
             self.turn_order = turn_order
+        
+        self.mutliteam_capture_ally = mutliteam_capture_ally
 
     def add_ruleset(self, tile, board: Board, ruleset: RuleSet):
         piece = board.get_tile(tile)
         team = piece.team
-        allies = team.allies
+        if piece.has_moved and self.mutliteam_capture_ally:
+            allies = piece.get_allies_intersection()
+        else:
+            allies = piece.get_allies_union()
         piece_name = ruleset.name
         moveset = ruleset.moveset
         captureset = ruleset.captureset
@@ -115,7 +120,7 @@ class SquareRuleEngine(AbstractRuleEngine):
                             break
                         if target.piece == 'empty':
                             pass
-                        elif target.team.name not in allies:
+                        elif not target.is_allies(allies):
                             legal_moves.append(Board.index_to_tile(new_row, new_col))
                             break
                         else:
@@ -126,12 +131,12 @@ class SquareRuleEngine(AbstractRuleEngine):
                     if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
                         if target != None:
-                            if target.team.name not in allies:
+                            if not target.is_allies(allies):
                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
         return legal_moves
 
 
-    def get_legal_moves(self, tile, board: Board):
+    def get_legal_moves(self, tile, board: Board, check=True):
         piece = board.get_tile(tile)
         legal_moves = []
 
@@ -146,10 +151,21 @@ class SquareRuleEngine(AbstractRuleEngine):
         # All Other Pieces
         legal_moves.extend(self.add_ruleset(tile, board, self.rulesets[piece.piece]))
 
+        if check and piece.is_royal:
+            board_copy = board.copy()
+            for move in legal_moves:
+                board_moved = self.play_move(board_copy, tile, move, check=False)
+                for royal_tile in board_moved.royal_tiles:
+                    if self.is_in_check(royal_tile, board_moved):
+                        legal_moves.remove(move)
+                        break
+
+
         return legal_moves
 
-    def is_in_check(self, team):
-        pass
+    def is_in_check(self, tile, board: Board):
+        return False
+
     
     def all_legal_moves(self, team, board: Board):
         legal_moves = []
@@ -160,14 +176,14 @@ class SquareRuleEngine(AbstractRuleEngine):
                     legal_moves.extend(self.get_legal_moves(tile, board))
         return legal_moves
 
-    def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False) -> Board:
+    def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False, check=True) -> Board:
         if not illegal_moves:
-            legal_moves = self.get_legal_moves(start_tile, board)
+            legal_moves = self.get_legal_moves(start_tile, board, check)
             if end_tile not in legal_moves:
                 print("Illegal Move")
                 return board
         
-        if board.get_tile(start_tile).team.name != board.current_team:
+        if board.current_team not in board.get_tile(start_tile).get_team_names():
             print("You Can't Play Your Opponent's Pieces")
             return board
             
@@ -176,9 +192,15 @@ class SquareRuleEngine(AbstractRuleEngine):
 
         piece = board.get_tile(start_tile).piece
 
+        royal_tiles = board.royal_tiles
+        if board.get_tile(start_tile).is_royal:
+            royal_tiles.remove(start_tile)
+            royal_tiles.append(end_tile)
+
         new_board = board.board
         new_board[end[0]][end[1]] = board.get_tile(start_tile).moved()
         new_board[start[0]][start[1]] = Tile()
+
 
         ruleset = self.rulesets[piece]
         promotion = ruleset.promotion
@@ -191,7 +213,7 @@ class SquareRuleEngine(AbstractRuleEngine):
             next_team = self.turn_order[next_index]
         else:
             next_team = self.turn_order[0]
-        return Board(next_team, new_board)
+        return Board(next_team, new_board, royal_tiles)
     
     def __str__(self):
         return str(self.rulesets)
