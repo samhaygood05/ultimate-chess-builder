@@ -22,7 +22,7 @@ from teams.team import TeamPresets as tp
 from rule_engines.abstract_rule_engine import AbstractRuleEngine
 
 class SquareRuleEngine(AbstractRuleEngine):
-    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, mutliteam_capture_ally = False):
+    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False):
         self.rulesets = RuleSet.rule_dict(
             RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
             RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
@@ -49,15 +49,18 @@ class SquareRuleEngine(AbstractRuleEngine):
         else:
             self.turn_order = turn_order
         
-        self.mutliteam_capture_ally = mutliteam_capture_ally
+        self.multiteam_capture_ally = multiteam_capture_ally
 
     def add_ruleset(self, tile, board: Board, ruleset: RuleSet):
         piece = board.get_tile(tile)
         team = piece.team
-        if piece.has_moved and self.mutliteam_capture_ally:
+        if piece.has_moved and self.multiteam_capture_ally:
             allies = piece.get_allies_intersection()
+            multiteam_capture_ally = True
         else:
             allies = piece.get_allies_union()
+            multiteam_capture_ally = False
+
         piece_name = ruleset.name
         moveset = ruleset.moveset
         captureset = ruleset.captureset
@@ -120,7 +123,7 @@ class SquareRuleEngine(AbstractRuleEngine):
                             break
                         if target.piece == 'empty':
                             pass
-                        elif not target.is_allies(allies):
+                        elif not target.is_allies(allies, not multiteam_capture_ally):
                             legal_moves.append(Board.index_to_tile(new_row, new_col))
                             break
                         else:
@@ -131,7 +134,7 @@ class SquareRuleEngine(AbstractRuleEngine):
                     if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
                         if target != None:
-                            if not target.is_allies(allies):
+                            if not target.is_allies(allies, not multiteam_capture_ally):
                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
         return legal_moves
 
@@ -166,7 +169,6 @@ class SquareRuleEngine(AbstractRuleEngine):
     def is_in_check(self, tile, board: Board):
         return False
 
-    
     def all_legal_moves(self, team, board: Board):
         legal_moves = []
         for row in range(len(board.board)):

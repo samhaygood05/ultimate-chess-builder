@@ -94,7 +94,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         elif current_team.name == 'black':
             board_color = (0.3, 0.3, 0.3)
         else:
-            board_color = colorsys.hsv_to_rgb(colorsys.rgb_to_hsv(*current_team.color)[0], 0.5, 0.5)
+            board_color = colorsys.hsv_to_rgb(colorsys.rgb_to_hsv(*current_team.color)[0], 0.5, 0.7)
 
         highlight_color=(1.0, 1.0, 0.0)
         selected_color=(1.0, 0.0, 0.0)

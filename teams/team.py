@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-import os
-from PIL import Image
 from teams.abstract_team import AbstractTeam
 
 class Team(AbstractTeam):

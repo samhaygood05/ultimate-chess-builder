@@ -32,7 +32,7 @@ class Variants:
         except:
             with open(path, 'wb') as f:
                 pickle.dump((board, rule_engine), f)
-        print('Preset Saved')
+        print(f'{name} Preset Saved')
 
     def load(name):
         path = f"presets/{name}.chess"

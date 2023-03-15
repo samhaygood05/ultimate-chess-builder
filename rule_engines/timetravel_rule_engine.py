@@ -22,7 +22,7 @@ from tile import Tile
 import copy
 
 class TimeTravelRuleEngine(AbstractRuleEngine):
-    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, mutliteam_capture_ally = False, time_distance = None):
+    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False, time_distance = None):
         self.rulesets = RuleSet.rule_dict(
             RuleSet('pawn', [(1, 0, 0, 0), (0, 0, 1, 0)], [(1, -1, 0, 0), (1, 1, 0, 0), (0, -1, 1, 0), (0, 1, 1, 0)], True, 2, False, 'queen'),
             RuleSet('rook', [(0, 1, 0, 0), (0, -1, 0, 0), (1, 0, 0, 0), (-1, 0, 0, 0), (0, 0, 0, 1), (0, 0, 0, -1), (0, 0, 1, 0), (0, 0, -1, 0)], None, False, 0, True),
@@ -79,7 +79,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         else:
             self.turn_order = turn_order
 
-        self.mutliteam_capture_ally = mutliteam_capture_ally
+        self.multiteam_capture_ally = multiteam_capture_ally
 
         # Time Travel Specific
         if time_distance == None:
@@ -90,10 +90,12 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
     def add_ruleset(self, tile_loc, board: PolyBoard, ruleset: RuleSet):
         piece = board.get_tile(*tile_loc)
         team = piece.team
-        if piece.has_moved and self.mutliteam_capture_ally:
+        if piece.has_moved and self.multiteam_capture_ally:
             allies = piece.get_allies_intersection()
+            multiteam_capture_ally = True
         else:
             allies = piece.get_allies_union()
+            multiteam_capture_ally = False
         piece_name = ruleset.name
         moveset = ruleset.moveset
         captureset = ruleset.captureset
@@ -175,7 +177,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                                 break
                             if target.piece == 'empty':
                                 pass
-                            elif not target.is_allies(allies):
+                            elif not target.is_allies(allies, not multiteam_capture_ally):
                                 legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                                 break
                             else:
@@ -189,7 +191,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                         if (new_row in range(len(target_board.board))) and (new_col in range(len(target_board.board[new_row]))):
                             target = target_board.board[new_row][new_col]
                             if target != None:
-                                if not target.is_allies(allies):
+                                if not target.is_allies(allies, not multiteam_capture_ally):
                                     legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                 except:
                     pass
