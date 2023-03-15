@@ -3,8 +3,8 @@
 
  ## Features
  - Create a chess board out of any arbitrary arrangement of tiles, even non-rectangular arrangements
+ - Create custom pieces with their own movement rules
  - Supports any number of players
- - Custom pieces with their own movement rules
  - Pieces can be on multiple teams at once
  - Time Travel Mode (Similar to 5D Chess)
 
