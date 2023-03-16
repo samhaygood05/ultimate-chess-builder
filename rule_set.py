@@ -38,7 +38,7 @@ class RuleSet:
         return inverse_captureset
 
     def __str__(self):
-        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}"
+        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Promotion: {self.promotion}"
 
     def __repr__(self):
-        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Directional: {self.directional}, Promotion: {self.promotion}"
+        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Promotion: {self.promotion}"

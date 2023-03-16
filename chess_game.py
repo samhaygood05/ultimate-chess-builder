@@ -1,13 +1,14 @@
-from boards.square_board import SquareBoard
+from boards.standard_board import StandardBoard
 from boards.poly_board import PolyBoard
 from render_engines.timetravel_render_engine import TimeTravelRenderEngine
 from render_engines.square_render_engine import SquareRenderEngine
+from render_engines.hex_render_engine import HexRenderEngine
 from rule_set import RuleSet
-from rule_engines.square_rule_engine import SquareRuleEngine
+from rule_engines.standard_rule_engine import StandardRuleEngine
 from variants import Variants
 from tile import Tile
 from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
 
-    renderer = SquareRenderEngine((800, 600), *Variants.load('4player_rebel_knights'))
+    renderer = HexRenderEngine((800, 600), board=StandardBoard(hexagonal=True), rule_engine=StandardRuleEngine(hexagonal=True))

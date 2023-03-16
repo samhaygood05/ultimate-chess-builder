@@ -16,6 +16,7 @@ limitations under the License.
 
 from render_engines.abstract_render_engine import AbstractRenderEngine
 from render_engines.square_render_engine import SquareRenderEngine
+from render_engines.hex_render_engine import HexRenderEngine
 from rule_engines.timetravel_rule_engine import TimeTravelRuleEngine
 from boards.poly_board import PolyBoard
 import pygame
@@ -103,7 +104,10 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             rows = len(board.board) / 20
             cols = len(board.board[0]) / 20
             board_center = (cols + 2*inner_border_width + outer_border_width, rows + 2*inner_border_width + outer_border_width)
-            quads = SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_board(self.zoom, highlight, select, hover, x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z)
+            if board.hexagonal:
+                quads = HexRenderEngine((0, 0), board=board, render_on_init=False).draw_board(self.zoom, highlight, select, hover, x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z)
+            else:
+                quads = SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_board(self.zoom, highlight, select, hover, x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z)
             board_quads[board_loc] = quads
         
         return board_quads
@@ -126,7 +130,10 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             rows = len(board.board) / 20
             cols = len(board.board[0]) / 20
             board_center = (cols + 2*inner_border_width + outer_border_width, rows + 2*inner_border_width + outer_border_width)
-            SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
+            if board.hexagonal:
+                HexRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
+            else:
+                HexRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
 
     def main_loop(self):
         hover_tile = (('a', 'a'), '')

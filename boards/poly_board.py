@@ -11,16 +11,16 @@ limitations under the License.
 '''
 
 from boards.abstract_board import AbstractBoard
-from boards.square_board import SquareBoard
+from boards.standard_board import StandardBoard
 from tile import Tile
 from variants import Variants
 from teams.time_team import TimeTeamPresets as tp
 import copy
 
 class PolyBoard(AbstractBoard):
-    def __init__(self, boards: dict = None, active_boards: list=None):
+    def __init__(self, boards: dict = None, active_boards: list=None, hexagonal=False):
         if boards == None:
-            self.boards = {(0,0): SquareBoard(board_state=Variants.create_standard_board(tp.WHITE, tp.BLACK, 4))}
+            self.boards = {(0,0): StandardBoard(board_state=Variants.create_standard_board(tp.WHITE, tp.BLACK, 4), hexagonal=hexagonal)}
         else:
             self.boards = boards
         if active_boards == None:

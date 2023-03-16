@@ -15,22 +15,32 @@ limitations under the License.
 '''
 
 from rule_set import RuleSet
-from boards.square_board import SquareBoard as Board
+from boards.standard_board import StandardBoard as Board
 from teams.team import Team
 from tile import Tile
 from teams.team import TeamPresets as tp
 from rule_engines.abstract_rule_engine import AbstractRuleEngine
 
-class SquareRuleEngine(AbstractRuleEngine):
-    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False):
-        self.rulesets = RuleSet.rule_dict(
-            RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
-            RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
-            RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
-            RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
-            RuleSet('queen', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, True),
-            RuleSet('king', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, False)
+class StandardRuleEngine(AbstractRuleEngine):
+    def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False, hexagonal=False):
+        if hexagonal:
+            self.rulesets = RuleSet.rule_dict(
+            RuleSet('pawn', [(1, 1)], [(0, 1), (1, 0)], True, 2, False, 'queen'),
+            RuleSet('rook', [(1,0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)], None, False, 0, True),
+            RuleSet('bishop', [(2, 1), (1, 2), (-1, 1), (1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
+            RuleSet('knight', [(1, 3), (2, 3), (3, 2), (3, 1), (2, -1), (1, -2), (-1, -3), (-2, -3), (-3, -2), (-3, -1), (-2, 1), (-1, 2)], None, False, 0, False),
+            RuleSet('queen', [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
+            RuleSet('king', [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, False)
         )
+        else:
+            self.rulesets = RuleSet.rule_dict(
+                RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
+                RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
+                RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
+                RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
+                RuleSet('queen', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, True),
+                RuleSet('king', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, False)
+            )
         if rulesets != None:
             self.rulesets.update(rulesets)
         if teams == None:
@@ -38,10 +48,16 @@ class SquareRuleEngine(AbstractRuleEngine):
         else:
             self.teams = teams
         if promotion_tiles == None:
-            self.promotion_tiles = {
-                'white': ['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'],
-                'black': ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']
-            }
+            if hexagonal:
+                self.promotion_tiles = {
+                    'white': ['a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'b11', 'c11', 'd11', 'e11', 'f11'],
+                    'black': ['f1', 'g1', 'h1', 'i1', 'j1', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6']
+                }
+            else:
+                self.promotion_tiles = {
+                    'white': ['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'],
+                    'black': ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']
+                }
         else:
             self.promotion_tiles = promotion_tiles
         if turn_order == None:
@@ -139,7 +155,7 @@ class SquareRuleEngine(AbstractRuleEngine):
         return legal_moves
 
 
-    def get_legal_moves(self, tile, board: Board, check=True):
+    def get_legal_moves(self, tile, board: Board, check=False):
         piece = board.get_tile(tile)
         legal_moves = []
 

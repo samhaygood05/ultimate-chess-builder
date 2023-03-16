@@ -71,7 +71,11 @@ class Tile:
         return list(set([self.team.name, self.secondary_team.name, self.trinary_team.name, self.quadinary_team.name]))
 
     def __str__(self) -> str:
+        if self.piece == 'empty':
+            return 'empty'
         return f"{self.team.name} {self.piece}"
 
     def __repr__(self) -> str:
+        if self.piece == 'empty':
+            return 'empty'
         return f"{self.team.name} {self.piece}"

@@ -18,8 +18,8 @@ from tile import Tile
 from teams.team import Team
 from teams.team import TeamPresets as tp
 from rule_set import RuleSet
-from rule_engines.square_rule_engine import SquareRuleEngine
-from boards.square_board import SquareBoard
+from rule_engines.standard_rule_engine import StandardRuleEngine
+from boards.standard_board import StandardBoard
 import pickle
 import copy
 
@@ -59,3 +59,14 @@ class Variants:
 
         empty_area = [copy.deepcopy(empty_area_row) for i in range(distance)]
         return team1_area + empty_area + team2_area
+    
+    def create_empty_hex_board(size=6):
+        board = []
+        tile = [Tile()]
+        empty = [None]
+        for i in range(size):
+            board.append((size-i-1)*empty + (size+i)*tile)
+        for i in range(size-1):
+            board.append((2*size-i-2)*tile + (i+1)*empty)
+
+        return board
