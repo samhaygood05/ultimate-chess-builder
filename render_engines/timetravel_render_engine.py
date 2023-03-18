@@ -135,6 +135,19 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
         self.camera_pos = [-columns, -rows, 0.5]
+
+        max_rows = 0
+        max_cols = 0
+        for board in self.board.boards.values():
+            max_rows = max(max_rows, len(board.board) / 10)
+            max_cols = max(max_cols, len(board.board[0]) / 10)
+
+        square_size = 1 / 10
+        outer_border_width = 0.3 * square_size # set the width of the border
+        inner_border_width = 0.05 * square_size # set the width of the border
+
+        self.max_board_size = (max_cols + 4*inner_border_width + 2*outer_border_width, max_rows + 4*inner_border_width + 2*outer_border_width)
+
         self.main_loop()
 
     def main_loop(self):
@@ -158,6 +171,7 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
                             selected_tile = hover_tile
                         else:
                             self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves)
+                            self.camera_pos = [self.camera_pos[0] - self.max_board_size[0], self.camera_pos[1], self.camera_pos[2]]
                             selected_tile = (('a', 'a'), '')
                     elif event.button == 3:
                         selected_tile = (('a', 'a'), '')

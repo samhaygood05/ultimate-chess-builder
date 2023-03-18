@@ -255,7 +255,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         if start_board == end_board:
             board.active_boards.remove(start_board)
             new_board = copy.deepcopy(board.boards[start_board].board)
-            new_board[end[0]][end[1]] = board.boards[start_board].get_tile(start_tile).moved()
+            new_board[end[0]][end[1]], new_board[start[0]][start[1]] = board.boards[start_board].get_tile(end_tile).transfer_piece(board.boards[start_board].get_tile(start_tile))
             new_board[start[0]][start[1]] = Tile()
 
 
@@ -289,10 +289,9 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             except:
                 pass
 
-            new_end_board[end[0]][end[1]] = board.boards[start_board].get_tile(start_tile).moved()
-            new_start_board[start[0]][start[1]] = Tile()
+            new_end_board[end[0]][end[1]], new_start_board[start[0]][start[1]] = board.boards[end_board].get_tile(end_tile).transfer_piece(board.boards[start_board].get_tile(start_tile))
 
-            ruleset = self.rulesets[piece]
+            ruleset = self.rulesets[piece.name]
             promotion = ruleset.promotion
             if promotion != None:
                 if end_tile in self.promotion_tiles[current_team]:
@@ -305,7 +304,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                 next_team = self.turn_order[0]
 
             new_start_board_loc = (start_board[0], start_board[1] + 1)
-            time_direction = board.get_tile(*start_tile_loc).team.time_direction
+            time_direction = board.get_tile(*start_tile_loc).piece.team.time_direction
             new_end_board_loc = (end_board[0], end_board[1] + 1)
             while new_end_board_loc[0] in [board_a[0] for board_a in board.boards.keys()]:
                 new_end_board_loc = (new_end_board_loc[0] - time_direction, new_end_board_loc[1])
