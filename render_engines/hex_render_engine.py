@@ -27,7 +27,7 @@ import colorsys
 import math
 
 class HexRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: StandardBoard = None, rule_engine: StandardRuleEngine = None, illegal_moves=False, render_on_init=True):
+    def __init__(self, screen_size, board: StandardBoard = None, rule_engine: StandardRuleEngine = None, illegal_moves=False, render_on_init=False):
         if board == None:
             self.board = StandardBoard()
         else:
@@ -42,74 +42,7 @@ class HexRenderEngine(AbstractRenderEngine):
         self.imgs = dict()
 
         if render_on_init:
-            rows = len(self.board.board)
-            columns = len(self.board.board[0])
-            square_size = 1 / 10 / math.sqrt(3)
-            x_min_max = [None, None]
-            y_min_max = [None, None]
-            for row in range(rows):
-                for column in range(columns):
-                    x_col = 3/2 * column + 3/2 * row
-                    y_row = math.sqrt(3)/2.0 * column - math.sqrt(3)/2.0 * row
-                    x_pos = x_col * square_size
-                    y_pos = y_row * square_size
-                    z_pos = 0
-
-                    tile = StandardBoard.index_to_tile(row, column)
-                    piece = self.board.get_tile(tile)
-                    if piece is None:
-                        continue
-
-                    quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
-                    center = ((quad[0][0] + quad[2][0])/2, (quad[0][1] + quad[2][1])/2)
-                    angles = [60*i*math.pi/180 for i in range(6)]
-                    hexagon = [(center[0] + square_size * math.cos(angle), center[1] + square_size * math.sin(angle), z_pos) for angle in angles]
-
-                    for vertex in hexagon:
-                        if x_min_max[0] == None or x_min_max[0] > vertex[0]:
-                            x_min_max[0] = vertex[0]
-                        if x_min_max[1] == None or x_min_max[1] < vertex[0]:
-                            x_min_max[1] = vertex[0]
-                        if y_min_max[0] == None or y_min_max[0] > vertex[1]:
-                            y_min_max[0] = vertex[1]
-                        if y_min_max[1] == None or y_min_max[1] < vertex[1]:
-                            y_min_max[1] = vertex[1]
-
-            imgs = dict()
-            black_imgs = dict()
-            white_imgs = dict()
-            for piece in self.rule_engine.rulesets.keys():
-                black_files = f"images/black/{piece}.png"
-                white_files = f"images/white/{piece}.png"
-                with open(white_files, "rb") as file:
-                    img = Image.open(file).convert('RGBA')
-                    white_imgs[piece] = img
-                with open(black_files, "rb") as file:
-                    img = Image.open(file).convert('RGBA')
-                    black_imgs[piece] = img
-            with open('images/blank.png', "rb") as file:
-                blank = Image.open(file).convert('RGBA')
-            
-            imgs['black'] = black_imgs
-            imgs['white'] = white_imgs
-            imgs['blank'] = blank
-
-            self.imgs = imgs
-
-
-            pygame.init()
-            self.display = screen_size
-            pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
-            self.screen_ratio = self.display[0]/self.display[1]
-            self.zoom = 1.0
-
-            rows = len(self.board.board) / 20
-            columns = len(self.board.board[0]) / 20
-
-            gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
-            glRotatef(180, 1, 0, 0)
-            self.camera_pos = [-(x_min_max[0] + x_min_max[1])/2, -(y_min_max[0] + y_min_max[1])/2, 0.5]
-            self.main_loop()
+            self.initialize(screen_size)
 
     def draw_board(self, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()
@@ -287,7 +220,6 @@ class HexRenderEngine(AbstractRenderEngine):
         
         return quads
 
-
     def draw_pieces(self, imgs, zoom, pos):
         prjMat = (GLfloat * 16)()
         glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
@@ -387,6 +319,76 @@ class HexRenderEngine(AbstractRenderEngine):
                 glVertex3fv(quad[3])
                 glEnd()
                 glDisable(GL_TEXTURE_2D)
+
+    def initialize(self, screen_size):
+        rows = len(self.board.board)
+        columns = len(self.board.board[0])
+        square_size = 1 / 10 / math.sqrt(3)
+        x_min_max = [None, None]
+        y_min_max = [None, None]
+        for row in range(rows):
+            for column in range(columns):
+                x_col = 3/2 * column + 3/2 * row
+                y_row = math.sqrt(3)/2.0 * column - math.sqrt(3)/2.0 * row
+                x_pos = x_col * square_size
+                y_pos = y_row * square_size
+                z_pos = 0
+
+                tile = StandardBoard.index_to_tile(row, column)
+                piece = self.board.get_tile(tile)
+                if piece is None:
+                    continue
+
+                quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
+                center = ((quad[0][0] + quad[2][0])/2, (quad[0][1] + quad[2][1])/2)
+                angles = [60*i*math.pi/180 for i in range(6)]
+                hexagon = [(center[0] + square_size * math.cos(angle), center[1] + square_size * math.sin(angle), z_pos) for angle in angles]
+
+                for vertex in hexagon:
+                    if x_min_max[0] == None or x_min_max[0] > vertex[0]:
+                        x_min_max[0] = vertex[0]
+                    if x_min_max[1] == None or x_min_max[1] < vertex[0]:
+                        x_min_max[1] = vertex[0]
+                    if y_min_max[0] == None or y_min_max[0] > vertex[1]:
+                        y_min_max[0] = vertex[1]
+                    if y_min_max[1] == None or y_min_max[1] < vertex[1]:
+                        y_min_max[1] = vertex[1]
+
+        imgs = dict()
+        black_imgs = dict()
+        white_imgs = dict()
+        for piece in self.rule_engine.rulesets.keys():
+            black_files = f"images/black/{piece}.png"
+            white_files = f"images/white/{piece}.png"
+            with open(white_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                white_imgs[piece] = img
+            with open(black_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                black_imgs[piece] = img
+        with open('images/blank.png', "rb") as file:
+            blank = Image.open(file).convert('RGBA')
+        
+        imgs['black'] = black_imgs
+        imgs['white'] = white_imgs
+        imgs['blank'] = blank
+
+        self.imgs = imgs
+
+
+        pygame.init()
+        self.display = screen_size
+        pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
+        self.screen_ratio = self.display[0]/self.display[1]
+        self.zoom = 1.0
+
+        rows = len(self.board.board) / 20
+        columns = len(self.board.board[0]) / 20
+
+        gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
+        glRotatef(180, 1, 0, 0)
+        self.camera_pos = [-(x_min_max[0] + x_min_max[1])/2, -(y_min_max[0] + y_min_max[1])/2, 0.5]
+        self.main_loop()
 
     def main_loop(self):
 

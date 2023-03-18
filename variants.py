@@ -24,14 +24,14 @@ import pickle
 import copy
 
 class Variants:
-    def save(name, board, rule_engine):
+    def save(name, render_engine):
         path = f"presets/{name}.chess"
         try:
             with open(path, 'xb') as f:
-                pickle.dump((board, rule_engine), f)
+                pickle.dump(render_engine, f)
         except:
             with open(path, 'wb') as f:
-                pickle.dump((board, rule_engine), f)
+                pickle.dump(render_engine, f)
         print(f'{name} Preset Saved')
 
     def load(name):
@@ -40,6 +40,7 @@ class Variants:
             preset = pickle.load(f)
         print(f'{name} Preset Loaded')
         return preset
+    
     
 
     MISC_FANTASY_RULESET = RuleSet.rule_dict(

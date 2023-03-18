@@ -27,6 +27,10 @@ class AbstractRenderEngine(ABC):
         pass
 
     @abstractmethod
+    def initialize(self):
+        pass
+
+    @abstractmethod
     def main_loop(self):
         pass
 

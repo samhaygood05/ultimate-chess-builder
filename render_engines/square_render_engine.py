@@ -26,7 +26,7 @@ import numpy as np
 import colorsys
 
 class SquareRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False, render_on_init=True):
+    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False, render_on_init=False):
         if board == None:
             self.board = Board()
         else:
@@ -41,42 +41,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         self.imgs = dict()
 
         if render_on_init:
-
-            imgs = dict()
-            black_imgs = dict()
-            white_imgs = dict()
-            for piece in self.rule_engine.rulesets.keys():
-                black_files = f"images/black/{piece}.png"
-                white_files = f"images/white/{piece}.png"
-                with open(white_files, "rb") as file:
-                    img = Image.open(file).convert('RGBA')
-                    white_imgs[piece] = img
-                with open(black_files, "rb") as file:
-                    img = Image.open(file).convert('RGBA')
-                    black_imgs[piece] = img
-            with open('images/blank.png', "rb") as file:
-                blank = Image.open(file).convert('RGBA')
-            
-            imgs['black'] = black_imgs
-            imgs['white'] = white_imgs
-            imgs['blank'] = blank
-
-            self.imgs = imgs
-
-
-            pygame.init()
-            self.display = screen_size
-            pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
-            self.screen_ratio = self.display[0]/self.display[1]
-            self.zoom = 1.0
-
-            rows = len(self.board.board) / 20
-            columns = len(self.board.board[0]) / 20
-
-            gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
-            glRotatef(180, 1, 0, 0)
-            self.camera_pos = [-columns, -rows, 0.5]
-            self.main_loop()
+            self.initialize(screen_size)
     
     def draw_board(self, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()
@@ -320,7 +285,44 @@ class SquareRenderEngine(AbstractRenderEngine):
                 glVertex3fv(quad[3])
                 glEnd()
                 glDisable(GL_TEXTURE_2D)
-    
+
+    def initialize(self, screen_size):
+        imgs = dict()
+        black_imgs = dict()
+        white_imgs = dict()
+        for piece in self.rule_engine.rulesets.keys():
+            black_files = f"images/black/{piece}.png"
+            white_files = f"images/white/{piece}.png"
+            with open(white_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                white_imgs[piece] = img
+            with open(black_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                black_imgs[piece] = img
+        with open('images/blank.png', "rb") as file:
+            blank = Image.open(file).convert('RGBA')
+        
+        imgs['black'] = black_imgs
+        imgs['white'] = white_imgs
+        imgs['blank'] = blank
+
+        self.imgs = imgs
+
+
+        pygame.init()
+        self.display = screen_size
+        pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
+        self.screen_ratio = self.display[0]/self.display[1]
+        self.zoom = 1.0
+
+        rows = len(self.board.board) / 20
+        columns = len(self.board.board[0]) / 20
+
+        gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
+        glRotatef(180, 1, 0, 0)
+        self.camera_pos = [-columns, -rows, 0.5]
+        self.main_loop()
+
     def main_loop(self):
 
         hover_tile = ''

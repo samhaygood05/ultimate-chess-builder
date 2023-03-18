@@ -28,7 +28,7 @@ import numpy as np
 import colorsys
 
 class TimeTravelRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: PolyBoard = None, rule_engine: TimeTravelRuleEngine = None, illegal_moves=False):
+    def __init__(self, screen_size, board: PolyBoard = None, rule_engine: TimeTravelRuleEngine = None, illegal_moves=False, render_on_init=False):
         if board == None:
             self.board = PolyBoard()
         else:
@@ -40,39 +40,9 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
 
         self.illegal_moves = illegal_moves
 
-        imgs = dict()
-        black_imgs = dict()
-        white_imgs = dict()
-        for piece in self.rule_engine.rulesets.keys():
-            black_files = f"images/black/{piece}.png"
-            white_files = f"images/white/{piece}.png"
-            with open(white_files, "rb") as file:
-                img = Image.open(file).convert('RGBA')
-                white_imgs[piece] = img
-            with open(black_files, "rb") as file:
-                img = Image.open(file).convert('RGBA')
-                black_imgs[piece] = img
-        with open('images/blank.png', "rb") as file:
-            blank = Image.open(file).convert('RGBA')
-        
-        imgs['black'] = black_imgs
-        imgs['white'] = white_imgs
-        imgs['blank'] = blank
+        if render_on_init:
+            self.initialize(screen_size)
 
-        self.imgs = imgs
-
-        pygame.init()
-        self.display = screen_size
-        pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
-        self.screen_ratio = self.display[0]/self.display[1]
-        self.zoom = 1.0
-        rows = len(self.board.boards[(0,0)].board) / 20
-        columns = len(self.board.boards[(0,0)].board[0]) / 20
-        
-        gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
-        glRotatef(180, 1, 0, 0)
-        self.camera_pos = [-columns, -rows, 0.5]
-        self.main_loop()
 
     def draw_board(self, highlight_tiles=None, selected_tile=(('a', 'a'), ''), hover_tile=(('a', 'a'), ''), x=0, y=0, z=0):
         max_rows = 0
@@ -134,6 +104,41 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
                 HexRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
             else:
                 HexRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
+
+    def initialize(self, screen_size):
+        imgs = dict()
+        black_imgs = dict()
+        white_imgs = dict()
+        for piece in self.rule_engine.rulesets.keys():
+            black_files = f"images/black/{piece}.png"
+            white_files = f"images/white/{piece}.png"
+            with open(white_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                white_imgs[piece] = img
+            with open(black_files, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                black_imgs[piece] = img
+        with open('images/blank.png', "rb") as file:
+            blank = Image.open(file).convert('RGBA')
+        
+        imgs['black'] = black_imgs
+        imgs['white'] = white_imgs
+        imgs['blank'] = blank
+
+        self.imgs = imgs
+
+        pygame.init()
+        self.display = screen_size
+        pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
+        self.screen_ratio = self.display[0]/self.display[1]
+        self.zoom = 1.0
+        rows = len(self.board.boards[(0,0)].board) / 20
+        columns = len(self.board.boards[(0,0)].board[0]) / 20
+        
+        gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
+        glRotatef(180, 1, 0, 0)
+        self.camera_pos = [-columns, -rows, 0.5]
+        self.main_loop()
 
     def main_loop(self):
         hover_tile = (('a', 'a'), '')

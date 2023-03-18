@@ -77,12 +77,21 @@ class StandardRuleEngine(AbstractRuleEngine):
             allies = piece.get_allies_union()
             multiteam_capture_ally = False
 
-        piece_name = ruleset.name
-        moveset = ruleset.moveset
-        captureset = ruleset.captureset
-        first_move = ruleset.first_move
-        first_move_boost = ruleset.first_move_boost
-        multimove = ruleset.multimove
+        if ruleset.team_overrides != None and team.name in ruleset.team_overrides:
+            ruleset_override = ruleset.team_overrides[team.name]
+            piece_name = ruleset_override.name
+            moveset = ruleset_override.moveset
+            captureset = ruleset_override.captureset
+            first_move = ruleset_override.first_move
+            first_move_boost = ruleset_override.first_move_boost
+            multimove = ruleset_override.multimove
+        else:
+            piece_name = ruleset.name
+            moveset = ruleset.moveset
+            captureset = ruleset.captureset
+            first_move = ruleset.first_move
+            first_move_boost = ruleset.first_move_boost
+            multimove = ruleset.multimove
 
         if captureset == None:
             captureset = moveset
@@ -191,7 +200,7 @@ class StandardRuleEngine(AbstractRuleEngine):
             for col in range(len(board.board[row])):
                 tile = board.board[row][col]
                 if team == tile.team.name:
-                    legal_moves.extend(self.get_legal_moves(tile, board))
+                    legal_moves.extend((tile, self.get_legal_moves(tile, board)))
         return legal_moves
 
     def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False, check=True) -> Board:

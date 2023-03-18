@@ -36,3 +36,7 @@ class AbstractTeam(ABC):
         self.direction = direction
         self.perpendicular = (direction[1], -direction[0])
         return self
+    
+    def make_ai(self):
+        self.is_ai = True
+        return self

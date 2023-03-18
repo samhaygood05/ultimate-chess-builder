@@ -11,4 +11,5 @@ from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
 
-    renderer = HexRenderEngine((800, 600), board=StandardBoard(hexagonal=True), rule_engine=StandardRuleEngine(hexagonal=True))
+    Variants.load('hex/3player').initialize((800, 600))
+
