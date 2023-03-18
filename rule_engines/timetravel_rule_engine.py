@@ -88,7 +88,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             self.time_distance = time_distance
 
     def add_ruleset(self, tile_loc, board: PolyBoard, ruleset: RuleSet):
-        piece = board.get_tile(*tile_loc)
+        piece = board.get_tile(*tile_loc).piece
         team = piece.team
         if piece.has_moved and self.multiteam_capture_ally:
             allies = piece.get_allies_intersection()
@@ -125,7 +125,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         time_direction = team.time_direction
         time_distance = self.time_distance
 
-        if piece.piece == piece_name:
+        if piece.name == piece_name:
             # Logic for Moveset
             for delta_forward, delta_right, delta_parallel, delta_time in moveset:
                 delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1], delta_parallel*time_direction, delta_time*time_distance)
@@ -140,7 +140,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                         while (new_row in range(len(target_board.board))) and (new_col in range(len(target_board.board[new_row]))):
                             target = target_board.board[new_row][new_col]
                             if target != None:
-                                if target.piece == 'empty':
+                                if target.piece == None:
                                     legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                                 else:
                                     break
@@ -153,7 +153,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                         if (new_row in range(len(target_board.board))) and (new_col in range(len(target_board.board[new_row]))):
                             target = target_board.board[new_row][new_col]
                             if target != None:
-                                if target.piece == 'empty':
+                                if target.piece == None:
                                     legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                                     if first_move and not piece.has_moved:
                                         for i in range(first_move_boost - 1):
@@ -163,7 +163,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                                             try:
                                                 target_board = board.boards[new_board]
                                                 target = target_board.board[new_row][new_col]
-                                                if target.piece == 'empty':
+                                                if target.piece == None:
                                                     legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                                             except:
                                                 break
@@ -185,9 +185,9 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                             target = target_board.board[new_row][new_col]
                             if target == None:
                                 break
-                            if target.piece == 'empty':
+                            if target.piece == None:
                                 pass
-                            elif not target.is_allies(allies, not multiteam_capture_ally):
+                            elif not target.piece.is_allies(allies, not multiteam_capture_ally):
                                 legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                                 break
                             else:
@@ -201,7 +201,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
                         if (new_row in range(len(target_board.board))) and (new_col in range(len(target_board.board[new_row]))):
                             target = target_board.board[new_row][new_col]
                             if target != None:
-                                if not target.is_allies(allies, not multiteam_capture_ally):
+                                if not target.piece.is_allies(allies, not multiteam_capture_ally):
                                     legal_moves.append((new_board, PolyBoard.index_to_tile(new_row, new_col)))
                 except:
                     pass
@@ -216,11 +216,11 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             return legal_moves
         
         # Empty Tile
-        if piece.piece == 'empty':
+        if piece.piece == None:
             return legal_moves
         
         # All Other Pieces
-        legal_moves.extend(self.add_ruleset(tile_loc, board, self.rulesets[piece.piece]))
+        legal_moves.extend(self.add_ruleset(tile_loc, board, self.rulesets[piece.piece.name]))
 
         return legal_moves
     
@@ -242,7 +242,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
         
         current_team = board.boards[start_board].current_team
 
-        if board.current_team not in board.get_tile(*start_tile_loc).get_team_names():
+        if current_team not in board.get_tile(*start_tile_loc).piece.get_team_names():
             print("You Can't Play Your Opponent's Pieces")
             return board
         
@@ -259,7 +259,7 @@ class TimeTravelRuleEngine(AbstractRuleEngine):
             new_board[start[0]][start[1]] = Tile()
 
 
-            ruleset = self.rulesets[piece]
+            ruleset = self.rulesets[piece.name]
             promotion = ruleset.promotion
             if promotion != None:
                 if end_tile in self.promotion_tiles[current_team]:

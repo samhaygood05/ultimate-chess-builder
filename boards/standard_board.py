@@ -16,7 +16,9 @@ limitations under the License.
 
 from boards.abstract_board import AbstractBoard
 from tile import Tile
+from piece import Piece
 from teams.team import TeamPresets as tp
+from variants import Variants
 import copy
 
 class StandardBoard(AbstractBoard):
@@ -24,29 +26,24 @@ class StandardBoard(AbstractBoard):
         if board_state == None:
             if hexagonal:
                 self.board = [
-                [None, None, None, None, None, Tile(), Tile('pawn', tp.WHITE), Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE)],
-                [None, None, None, None, Tile(), Tile(), Tile('pawn', tp.WHITE), Tile(), Tile(), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE)],
-                [None, None, None, Tile(), Tile(), Tile(), Tile('pawn', tp.WHITE), Tile(), Tile('bishop', tp.WHITE), Tile(), Tile('knight', tp.WHITE)],
-                [None, None, Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.WHITE), Tile(), Tile(), Tile(), Tile('rook', tp.WHITE)],
-                [None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE)],
+                [None, None, None, None, None, Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('rook', tp.WHITE)), Tile(Piece('knight', tp.WHITE)), Tile(Piece('king', tp.WHITE)), Tile(Piece('bishop', tp.WHITE))],
+                [None, None, None, None, Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(), Tile(Piece('bishop', tp.WHITE)), Tile(Piece('queen', tp.WHITE))],
+                [None, None, None, Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(Piece('bishop', tp.WHITE)), Tile(), Tile(Piece('knight', tp.WHITE))],
+                [None, None, Tile(), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(), Tile(), Tile(Piece('rook', tp.WHITE))],
+                [None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE))],
                 [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                [Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile(), Tile(), Tile(), Tile(), Tile(), None],
-                [Tile('rook', tp.BLACK), Tile(), Tile(), Tile(), Tile('pawn', tp.BLACK), Tile(), Tile(), Tile(), Tile(), None, None],
-                [Tile('knight', tp.BLACK), Tile(), Tile('bishop', tp.BLACK), Tile(), Tile('pawn', tp.BLACK), Tile(), Tile(), Tile(), None, None, None],
-                [Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile(), Tile(), Tile('pawn', tp.BLACK), Tile(), Tile(), None, None, None, None],
-                [Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK), Tile('pawn', tp.BLACK), Tile(), None, None, None, None, None]
+                [Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), Tile(), Tile(), None],
+                [Tile(Piece('rook', tp.BLACK)), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), Tile(), None, None],
+                [Tile(Piece('knight', tp.BLACK)), Tile(), Tile(Piece('bishop', tp.BLACK)), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), None, None, None],
+                [Tile(Piece('king', tp.BLACK)), Tile(Piece('bishop', tp.BLACK)), Tile(), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), None, None, None, None],
+                [Tile(Piece('bishop', tp.BLACK)), Tile(Piece('queen', tp.BLACK)), Tile(Piece('knight', tp.BLACK)), Tile(Piece('rook', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(), None, None, None, None, None]
             ]
             else:
-                self.board = [[Tile('rook', tp.WHITE), Tile('knight', tp.WHITE), Tile('bishop', tp.WHITE), Tile('queen', tp.WHITE), Tile('king', tp.WHITE), Tile('bishop', tp.WHITE), Tile('knight', tp.WHITE), Tile('rook', tp.WHITE)],
-                                [Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE), Tile('pawn', tp.WHITE)],
-                                [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                                [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                                [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                                [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                                [Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK), Tile('pawn', tp.BLACK)],
-                                [Tile('rook', tp.BLACK), Tile('knight', tp.BLACK), Tile('bishop', tp.BLACK), Tile('queen', tp.BLACK), Tile('king', tp.BLACK), Tile('bishop', tp.BLACK), Tile('knight', tp.BLACK), Tile('rook', tp.BLACK)]]
+                self.board = Variants.create_standard_board(tp.WHITE, tp.BLACK, 4)
         else:
             self.board = board_state
+
+        self.hexagonal = hexagonal
 
         self.current_team = current_team
 
@@ -54,8 +51,8 @@ class StandardBoard(AbstractBoard):
             self.royal_tiles = []
             for row in range(len(self.board)):
                 for col in range(len(self.board[0])):
-                    if self.board[row][col] != None:
-                        if self.board[row][col].is_royal:
+                    if self.board[row][col] != None and self.board[row][col].piece != None:
+                        if self.board[row][col].piece.is_royal:
                             self.royal_tiles.append(StandardBoard.index_to_tile(row, col))
         else:
             self.royal_tiles = royal_tiles

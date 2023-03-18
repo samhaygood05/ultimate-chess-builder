@@ -11,5 +11,5 @@ from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
 
-    Variants.load('hex/3player').initialize((800, 600))
+    TimeTravelRenderEngine((800, 600), render_on_init=True)
 

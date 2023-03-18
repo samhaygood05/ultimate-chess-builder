@@ -211,17 +211,20 @@ class SquareRenderEngine(AbstractRenderEngine):
                 trinary_piece_color = (1.0, 1.0, 1.0)
                 quadinary_piece_color = (1.0, 1.0, 1.0)
                 tile = Board.index_to_tile(row, column)
-                piece = self.board.get_tile(tile)
-                if piece is None:
+                tile = self.board.get_tile(tile)
+                if tile == None:
                     continue
-                elif piece.piece == 'empty':
+                piece = tile.piece
+                if piece == None:
+                    continue
+                elif piece.name == 'empty':
                     continue
                 else:
                     if piece.team.name == 'black':
-                        img = imgs['black'][piece.piece]
+                        img = imgs['black'][piece.name]
                         piece_data = np.asarray(img, dtype=np.uint8)
                     else:
-                        img = imgs['white'][piece.piece]
+                        img = imgs['white'][piece.name]
                         piece_data = np.asarray(img, dtype=np.uint8)
                     if piece.team.name in ['white', 'black']:
                         piece_color = (1.0, 1.0, 1.0)
@@ -299,12 +302,9 @@ class SquareRenderEngine(AbstractRenderEngine):
             with open(black_files, "rb") as file:
                 img = Image.open(file).convert('RGBA')
                 black_imgs[piece] = img
-        with open('images/blank.png', "rb") as file:
-            blank = Image.open(file).convert('RGBA')
         
         imgs['black'] = black_imgs
         imgs['white'] = white_imgs
-        imgs['blank'] = blank
 
         self.imgs = imgs
 

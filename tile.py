@@ -17,65 +17,19 @@ limitations under the License.
 from teams.team import TeamPresets as tp
 
 class Tile:
-    def __init__(self, piece=None, team=None, secondary_team=None, trinary_team=None, quadinary_team=None, is_royal=None, has_moved=False):
-        if piece == None:
-            self.piece = 'empty'
-        else:
-            self.piece = piece
-        self.has_moved = has_moved
+    def __init__(self, piece=None, type=None):
+        self.piece = piece
+        self.type = type
 
-        if team == None:
-            self.team = tp.EMPTY
-        else:
-            self.team = team
-        if secondary_team == None:
-            self.secondary_team = self.team
-        else:
-            self.secondary_team = secondary_team
-        if trinary_team == None:
-            self.trinary_team = self.team
-        else:
-            self.trinary_team = trinary_team
-        if quadinary_team == None:
-            self.quadinary_team = self.secondary_team
-        else:
-            self.quadinary_team = quadinary_team
-        
-        if is_royal == None:
-            self.is_royal = (self.piece == 'king')
-        else:
-            self.is_royal = is_royal
-    
+    def transfer_piece(self, start_tile):
+        new_end = Tile(start_tile.piece.moved(), self.type)
+        new_start = Tile(None, start_tile.type)
+        return new_end, new_start
+
     def moved(self):
         self.has_moved = True
         return self
 
     def promote(self, promotion):
-        self.piece = promotion
+        self.piece.promote(promotion)
         return self
-    
-    def get_allies_intersection(self):
-        return list(set(self.team.allies) & set(self.secondary_team.allies) & set(self.trinary_team.allies) & set(self.quadinary_team.allies))
-
-    def get_allies_union(self):
-        return list(set(self.team.allies) | set(self.secondary_team.allies) | set(self.trinary_team.allies) | set(self.quadinary_team.allies))
-
-    def is_allies(self, allies, inclusive):
-        if inclusive:
-            return list(set(self.get_team_names()) & set(allies))
-        else:
-            return not list(set(self.get_team_names()) ^ set(allies))
-
-
-    def get_team_names(self):
-        return list(set([self.team.name, self.secondary_team.name, self.trinary_team.name, self.quadinary_team.name]))
-
-    def __str__(self) -> str:
-        if self.piece == 'empty':
-            return 'empty'
-        return f"{self.team.name} {self.piece}"
-
-    def __repr__(self) -> str:
-        if self.piece == 'empty':
-            return 'empty'
-        return f"{self.team.name} {self.piece}"

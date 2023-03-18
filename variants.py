@@ -15,11 +15,8 @@ limitations under the License.
 '''
 
 from tile import Tile
-from teams.team import Team
-from teams.team import TeamPresets as tp
+from piece import Piece
 from rule_set import RuleSet
-from rule_engines.standard_rule_engine import StandardRuleEngine
-from boards.standard_board import StandardBoard
 import pickle
 import copy
 
@@ -50,11 +47,11 @@ class Variants:
     )
 
     def create_standard_board(team1, team2, distance=4):
-        team1_area = [[Tile('rook', team1), Tile('knight', team1), Tile('bishop', team1), Tile('queen', team1), Tile('king', team1), Tile('bishop', team1), Tile('knight', team1), Tile('rook', team1)],
-                    [Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1), Tile('pawn', team1)]]
+        team1_area = [[Tile(Piece('rook', team1)), Tile(Piece('knight', team1)), Tile(Piece('bishop', team1)), Tile(Piece('queen', team1)), Tile(Piece('king', team1)), Tile(Piece('bishop', team1)), Tile(Piece('knight', team1)), Tile(Piece('rook', team1))],
+                    [Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1))]]
         
-        team2_area = [[Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2), Tile('pawn', team2)],
-                    [Tile('rook', team2), Tile('knight', team2), Tile('bishop', team2), Tile('queen', team2), Tile('king', team2), Tile('bishop', team2), Tile('knight', team2), Tile('rook', team2)]]
+        team2_area = [[Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2))],
+                    [Tile(Piece('rook', team2)), Tile(Piece('knight', team2)), Tile(Piece('bishop', team2)), Tile(Piece('queen', team2)), Tile(Piece('king', team2)), Tile(Piece('bishop', team2)), Tile(Piece('knight', team2)), Tile(Piece('rook', team2))]]
 
         empty_area_row = [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()]
 

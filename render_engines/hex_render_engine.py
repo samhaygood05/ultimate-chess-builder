@@ -248,49 +248,49 @@ class HexRenderEngine(AbstractRenderEngine):
                 piece = self.board.get_tile(tile)
                 if piece is None:
                     continue
-                elif piece.piece == 'empty':
+                elif piece.piece == None:
                     continue
                 else:
-                    if piece.team.name == 'black':
-                        img = imgs['black'][piece.piece]
+                    if piece.piece.team.name == 'black':
+                        img = imgs['black'][piece.piece.name]
                         piece_data = np.asarray(img, dtype=np.uint8)
                     else:
-                        img = imgs['white'][piece.piece]
+                        img = imgs['white'][piece.piece.name]
                         piece_data = np.asarray(img, dtype=np.uint8)
-                    if piece.team.name in ['white', 'black']:
+                    if piece.piece.team.name in ['white', 'black']:
                         piece_color = (1.0, 1.0, 1.0)
                     else:
-                        piece_color = piece.team.color
+                        piece_color = piece.piece.team.color
 
-                    if piece.secondary_team.name == 'black':
-                        if piece.team.name == 'black':
+                    if piece.piece.secondary_team.name == 'black':
+                        if piece.piece.team.name == 'black':
                             secondary_piece_color = (1.0, 1.0, 1.0)
                         else:
                             secondary_piece_color = (0.0, 0.0, 0.0)
-                    elif piece.secondary_team.name == 'white':
+                    elif piece.piece.secondary_team.name == 'white':
                         secondary_piece_color = (1.0, 1.0, 1.0)
                     else:
-                        secondary_piece_color = piece.secondary_team.color
+                        secondary_piece_color = piece.piece.secondary_team.color
 
-                    if piece.trinary_team.name == 'black':
-                        if piece.team.name == 'black':
+                    if piece.piece.trinary_team.name == 'black':
+                        if piece.piece.team.name == 'black':
                             trinary_piece_color = (1.0, 1.0, 1.0)
                         else:
                             trinary_piece_color = (0.0, 0.0, 0.0)
-                    elif piece.trinary_team.name == 'white':
+                    elif piece.piece.trinary_team.name == 'white':
                         trinary_piece_color = (1.0, 1.0, 1.0)
                     else:
-                        trinary_piece_color = piece.trinary_team.color
+                        trinary_piece_color = piece.piece.trinary_team.color
 
-                    if piece.quadinary_team.name == 'black':
-                        if piece.team.name == 'black':
+                    if piece.piece.quadinary_team.name == 'black':
+                        if piece.piece.team.name == 'black':
                             quadinary_piece_color = (1.0, 1.0, 1.0)
                         else:
                             quadinary_piece_color = (0.0, 0.0, 0.0)
-                    elif piece.secondary_team.name == 'white':
+                    elif piece.piece.secondary_team.name == 'white':
                         quadinary_piece_color = (1.0, 1.0, 1.0)
                     else:
-                        quadinary_piece_color = piece.quadinary_team.color
+                        quadinary_piece_color = piece.piece.quadinary_team.color
 
                 texture_id = glGenTextures(1)
                 glColor3fv(piece_color)

@@ -68,7 +68,11 @@ class StandardRuleEngine(AbstractRuleEngine):
         self.multiteam_capture_ally = multiteam_capture_ally
 
     def add_ruleset(self, tile, board: Board, ruleset: RuleSet):
-        piece = board.get_tile(tile)
+        piece = board.get_tile(tile).piece
+
+        if piece == None:
+            return []
+
         team = piece.team
         if piece.has_moved and self.multiteam_capture_ally:
             allies = piece.get_allies_intersection()
@@ -101,7 +105,7 @@ class StandardRuleEngine(AbstractRuleEngine):
         direction = team.direction
         side_direction = team.perpendicular
 
-        if piece.piece == piece_name:
+        if piece.name == piece_name:
             # Logic for Moveset
             for delta_forward, delta_right in moveset:
                 delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
@@ -113,7 +117,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                         target = board.board[new_row][new_col]
                         if target == None:
                             break
-                        if target.piece == 'empty':
+                        if target.piece == None:
                             legal_moves.append(Board.index_to_tile(new_row, new_col))
                         else:
                             break
@@ -123,7 +127,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                     if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
                         if target != None:
-                            if target.piece == 'empty':
+                            if target.piece == None:
                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
                                 if first_move and not piece.has_moved:
                                     for i in range(first_move_boost - 1):
@@ -131,7 +135,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                                         new_col += delta[1]
                                         try:
                                             target = board.board[new_row][new_col]
-                                            if target.piece == 'empty':
+                                            if target.piece == None:
                                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
                                         except:
                                             break
@@ -146,9 +150,9 @@ class StandardRuleEngine(AbstractRuleEngine):
                         target = board.board[new_row][new_col]
                         if target == None:
                             break
-                        if target.piece == 'empty':
+                        if target.piece == None:
                             pass
-                        elif not target.is_allies(allies, not multiteam_capture_ally):
+                        elif not target.piece.is_allies(allies, not multiteam_capture_ally):
                             legal_moves.append(Board.index_to_tile(new_row, new_col))
                             break
                         else:
@@ -158,8 +162,8 @@ class StandardRuleEngine(AbstractRuleEngine):
                 else:
                     if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
                         target = board.board[new_row][new_col]
-                        if target != None:
-                            if not target.is_allies(allies, not multiteam_capture_ally):
+                        if target != None and target.piece != None:
+                            if not target.piece.is_allies(allies, not multiteam_capture_ally):
                                 legal_moves.append(Board.index_to_tile(new_row, new_col))
         return legal_moves
 
@@ -173,11 +177,11 @@ class StandardRuleEngine(AbstractRuleEngine):
             return legal_moves
 
         # Empy Tile
-        if piece.piece == 'empty':
+        if piece.piece == None:
             return legal_moves
 
         # All Other Pieces
-        legal_moves.extend(self.add_ruleset(tile, board, self.rulesets[piece.piece]))
+        legal_moves.extend(self.add_ruleset(tile, board, self.rulesets[piece.piece.name]))
 
         if check and piece.is_royal:
             board_copy = board.copy()
@@ -210,7 +214,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                 print("Illegal Move")
                 return board
         
-        if board.current_team not in board.get_tile(start_tile).get_team_names():
+        if board.current_team not in board.get_tile(start_tile).piece.get_team_names():
             print("You Can't Play Your Opponent's Pieces")
             return board
             
@@ -220,16 +224,15 @@ class StandardRuleEngine(AbstractRuleEngine):
         piece = board.get_tile(start_tile).piece
 
         royal_tiles = board.royal_tiles
-        if board.get_tile(start_tile).is_royal:
+        if board.get_tile(start_tile).piece.is_royal:
             royal_tiles.remove(start_tile)
             royal_tiles.append(end_tile)
 
         new_board = board.board
-        new_board[end[0]][end[1]] = board.get_tile(start_tile).moved()
-        new_board[start[0]][start[1]] = Tile()
+        new_board[end[0]][end[1]], new_board[start[0]][start[1]] = board.get_tile(end_tile).transfer_piece(board.get_tile(start_tile))
 
 
-        ruleset = self.rulesets[piece]
+        ruleset = self.rulesets[piece.name]
         promotion = ruleset.promotion
         if promotion != None:
             if end_tile in self.promotion_tiles[board.current_team]:

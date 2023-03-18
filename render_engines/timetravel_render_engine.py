@@ -103,7 +103,7 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             if board.hexagonal:
                 HexRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
             else:
-                HexRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
+                SquareRenderEngine((0, 0), board=board, render_on_init=False).draw_pieces(self.imgs, self.zoom, (x + max_board_size[0]*(board_loc[1] + 1/2) - board_center[0], y + max_board_size[1]*(1/2 - board_loc[0]) - board_center[1], z))
 
     def initialize(self, screen_size):
         imgs = dict()
@@ -118,12 +118,9 @@ class TimeTravelRenderEngine(AbstractRenderEngine):
             with open(black_files, "rb") as file:
                 img = Image.open(file).convert('RGBA')
                 black_imgs[piece] = img
-        with open('images/blank.png', "rb") as file:
-            blank = Image.open(file).convert('RGBA')
         
         imgs['black'] = black_imgs
         imgs['white'] = white_imgs
-        imgs['blank'] = blank
 
         self.imgs = imgs
 
