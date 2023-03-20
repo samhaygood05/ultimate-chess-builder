@@ -20,26 +20,27 @@ from teams.team import Team
 from tile import Tile
 from teams.team import TeamPresets as tp
 from rule_engines.abstract_rule_engine import AbstractRuleEngine
+import random
 
 class StandardRuleEngine(AbstractRuleEngine):
     def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False, hexagonal=False):
         if hexagonal:
             self.rulesets = RuleSet.rule_dict(
-            RuleSet('pawn', [(1, 1)], [(0, 1), (1, 0)], True, 2, False, 'queen'),
-            RuleSet('rook', [(1,0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)], None, False, 0, True),
-            RuleSet('bishop', [(2, 1), (1, 2), (-1, 1), (1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
-            RuleSet('knight', [(1, 3), (2, 3), (3, 2), (3, 1), (2, -1), (1, -2), (-1, -3), (-2, -3), (-3, -2), (-3, -1), (-2, 1), (-1, 2)], None, False, 0, False),
-            RuleSet('queen', [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
-            RuleSet('king', [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, False)
+            RuleSet('pawn', 10, [(1, 1)], [(0, 1), (1, 0)], True, 2, False, 'queen'),
+            RuleSet('rook', 50, [(1,0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)], None, False, 0, True),
+            RuleSet('bishop', 30, [(2, 1), (1, 2), (-1, 1), (1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
+            RuleSet('knight', 30, [(1, 3), (2, 3), (3, 2), (3, 1), (2, -1), (1, -2), (-1, -3), (-2, -3), (-3, -2), (-3, -1), (-2, 1), (-1, 2)], None, False, 0, False),
+            RuleSet('queen', 90, [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
+            RuleSet('king', 900, [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, False)
         )
         else:
             self.rulesets = RuleSet.rule_dict(
-                RuleSet('pawn', [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
-                RuleSet('rook', [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
-                RuleSet('bishop', [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
-                RuleSet('knight', [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
-                RuleSet('queen', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, True),
-                RuleSet('king', [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, False)
+                RuleSet('pawn', 10, [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
+                RuleSet('rook', 50, [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
+                RuleSet('bishop', 30, [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
+                RuleSet('knight', 30, [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
+                RuleSet('queen', 90, [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, True),
+                RuleSet('king', 900, [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, False)
             )
         if rulesets != None:
             self.rulesets.update(rulesets)
@@ -192,22 +193,41 @@ class StandardRuleEngine(AbstractRuleEngine):
                         legal_moves.remove(move)
                         break
 
-
         return legal_moves
 
     def is_in_check(self, tile, board: Board):
         return False
 
-    def all_legal_moves(self, team, board: Board):
+    def all_legal_moves(self, team, board: Board, filter_capture=False):
         legal_moves = []
         for row in range(len(board.board)):
             for col in range(len(board.board[row])):
                 tile = board.board[row][col]
-                if team == tile.team.name:
-                    legal_moves.extend((tile, self.get_legal_moves(tile, board)))
+                if tile != None and tile.piece != None and team == tile.piece.team.name:
+                    moves = self.get_legal_moves(Board.index_to_tile(row, col), board)
+                    if moves:
+                        if filter_capture:
+                            filtered_moves = [move for move in moves if board.get_tile(move).piece != None]
+                            if filtered_moves:
+                                legal_moves += [(Board.index_to_tile(row, col), move) for move in filtered_moves]
+                        else:
+                            legal_moves += [(Board.index_to_tile(row, col), move) for move in moves]
         return legal_moves
 
-    def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False, check=True) -> Board:
+    def get_team_score(self, board):
+        scores = dict()
+        for team in self.teams:
+            scores[team] = 0
+
+        for row in range(len(board.board)):
+            for col in range(len(board.board[row])):
+                tile = board.board[row][col]
+                if tile != None and tile.piece != None:
+                        scores[tile.piece.team.name] += self.rulesets[tile.piece.name].points
+        
+        return scores
+
+    def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False, check=True, simulated_move=False) -> Board:
         if not illegal_moves:
             legal_moves = self.get_legal_moves(start_tile, board, check)
             if end_tile not in legal_moves:
@@ -243,8 +263,102 @@ class StandardRuleEngine(AbstractRuleEngine):
             next_team = self.turn_order[next_index]
         else:
             next_team = self.turn_order[0]
-        return Board(next_team, new_board, royal_tiles)
+        new_board_obj = Board(next_team, new_board, royal_tiles)
+        if not simulated_move:
+            print(f'{board.current_team} moved {piece.name} from {start_tile} to {end_tile}, scores: {self.get_team_score(new_board_obj)}')
+        return new_board_obj
     
+    def ai_play(self, board: Board, check=True, ai_type='random', simulated_move=False):
+        new_board = board
+        if ai_type == 'random_prioritize_capture':
+            ai_legal_moves = self.all_legal_moves(board.current_team, board, True)
+            if ai_legal_moves:
+                ai_start_tile, ai_end_tile = random.choice(ai_legal_moves)
+                new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
+            else:
+                new_board = self.ai_play(board, check, 'random')
+        elif ai_type == 'random':
+            ai_legal_moves = self.all_legal_moves(board.current_team, board)
+            if ai_legal_moves:
+                ai_start_tile, ai_end_tile = random.choice(ai_legal_moves)
+                new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
+        elif ai_type == 'minmax-0':
+            ai_legal_moves = self.all_legal_moves(board.current_team, board)
+            if ai_legal_moves:
+                max_scoring_move = None
+                scores = []
+                for ai_start_tile, ai_end_tile in ai_legal_moves:
+                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
+                    team_points = self.get_team_score(new_board)
+                    maximize = 0
+                    for team in team_points:
+                        if team in self.teams[board.current_team].allies:
+                            maximize += team_points[team]
+                        else:
+                            maximize -= team_points[team]
+                    scores += [maximize]
+                    if max_scoring_move == None:
+                        max_scoring_move = maximize
+                    else:
+                        max_scoring_move = max(maximize, max_scoring_move)
+
+                filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
+                if filtered_moves:
+                    ai_start_tile, ai_end_tile = random.choice(filtered_moves)
+                    new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
+        elif ai_type == 'minmax-1':
+            ai_legal_moves = self.all_legal_moves(board.current_team, board)
+            if ai_legal_moves:
+                max_scoring_move = None
+                scores = []
+                for ai_start_tile, ai_end_tile in ai_legal_moves:
+                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
+                    new_board = self.ai_play(new_board, check, 'minmax-0', True)
+                    team_points = self.get_team_score(new_board)
+                    maximize = 0
+                    for team in team_points:
+                        if team in self.teams[board.current_team].allies:
+                            maximize += team_points[team]
+                        else:
+                            maximize -= team_points[team]
+                    scores += [maximize]
+                    if max_scoring_move == None:
+                        max_scoring_move = maximize
+                    else:
+                        max_scoring_move = max(maximize, max_scoring_move)
+
+                filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
+                if filtered_moves:
+                    ai_start_tile, ai_end_tile = random.choice(filtered_moves)
+                    new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
+        elif ai_type == 'minmax-2':
+            ai_legal_moves = self.all_legal_moves(board.current_team, board)
+            if ai_legal_moves:
+                max_scoring_move = None
+                scores = []
+                for ai_start_tile, ai_end_tile in ai_legal_moves:
+                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
+                    new_board = self.ai_play(new_board, check, 'minmax-0', True)
+                    new_board = self.ai_play(new_board, check, 'minmax-0', True)
+                    team_points = self.get_team_score(new_board)
+                    maximize = 0
+                    for team in team_points:
+                        if team in self.teams[board.current_team].allies:
+                            maximize += team_points[team]
+                        else:
+                            maximize -= team_points[team]
+                    scores += [maximize]
+                    if max_scoring_move == None:
+                        max_scoring_move = maximize
+                    else:
+                        max_scoring_move = max(maximize, max_scoring_move)
+
+                filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
+                if filtered_moves:
+                    ai_start_tile, ai_end_tile = random.choice(filtered_moves)
+                    new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
+        return new_board
+
     def __str__(self):
         return str(self.rulesets)
 

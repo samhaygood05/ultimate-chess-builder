@@ -17,7 +17,7 @@ limitations under the License.
 from teams.abstract_team import AbstractTeam
 
 class Team(AbstractTeam):
-    def __init__(self, name, direction, allies=None, color=(1.0, 1.0, 1.0), is_ai=False):
+    def __init__(self, name, direction, allies=None, color=(1.0, 1.0, 1.0)):
         self.name = name
         self.direction = direction
         self.perpendicular = (direction[1], -direction[0])
@@ -25,7 +25,6 @@ class Team(AbstractTeam):
         if allies != None:
             self.allies.extend(allies)
         self.color = color
-        self.is_ai = is_ai
 
 class TeamPresets:
     WHITE = Team('white', (1, 0))

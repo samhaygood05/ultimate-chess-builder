@@ -29,7 +29,7 @@ import math
 class HexRenderEngine(AbstractRenderEngine):
     def __init__(self, screen_size, board: StandardBoard = None, rule_engine: StandardRuleEngine = None, illegal_moves=False, render_on_init=False):
         if board == None:
-            self.board = StandardBoard()
+            self.board = StandardBoard(hexagonal=True)
         else:
             self.board = board
         if rule_engine == None:
@@ -180,6 +180,8 @@ class HexRenderEngine(AbstractRenderEngine):
                 if piece is None:
                     continue
 
+                tint = piece.tint
+
                 quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
                 center = ((quad[0][0] + quad[2][0])/2, (quad[0][1] + quad[2][1])/2)
                 angles = [60*i*math.pi/180 for i in range(6)]
@@ -194,6 +196,8 @@ class HexRenderEngine(AbstractRenderEngine):
                     color = (0.7, 0.7, 0.7) # dark gray
                 else:
                     color = (0.8, 0.8, 0.8)
+                
+                color = (color[0]*tint[0], color[1]*tint[1], color[2]*tint[2])
 
                 if (row, column) in tiles_highlight and (row, column) in tile_hover:
                     color = ((color[0] + hover_highlight_color[0])/2, (color[1] + hover_highlight_color[1])/2, (color[2] + hover_highlight_color[2])/2)
@@ -216,7 +220,7 @@ class HexRenderEngine(AbstractRenderEngine):
 
                 tile_name = StandardBoard.index_to_tile(row, column)
 
-                quads[tile_name] = quad
+                quads[tile_name] = hexagon
         
         return quads
 
@@ -232,7 +236,7 @@ class HexRenderEngine(AbstractRenderEngine):
             for column in range(columns):
                 x_col = 2*math.sqrt(3)/3 * column + 2*math.sqrt(3)/3 * row
                 y_row = 2/3.0 * column - 2/3.0 * row
-                x_pos = x + x_col * square_size - 0.0094
+                x_pos = x + x_col * square_size - 0.0094 # Don't ask where this number comes from. I have no idea
                 y_pos = y + y_row * square_size
                 z_pos = z - 0.01
                 quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
@@ -320,7 +324,7 @@ class HexRenderEngine(AbstractRenderEngine):
                 glEnd()
                 glDisable(GL_TEXTURE_2D)
 
-    def initialize(self, screen_size):
+    def initialize(self, screen_size, ai_teams=None, ai_turn_delay=15):
         rows = len(self.board.board)
         columns = len(self.board.board[0])
         square_size = 1 / 10 / math.sqrt(3)
@@ -366,15 +370,18 @@ class HexRenderEngine(AbstractRenderEngine):
             with open(black_files, "rb") as file:
                 img = Image.open(file).convert('RGBA')
                 black_imgs[piece] = img
-        with open('images/blank.png', "rb") as file:
-            blank = Image.open(file).convert('RGBA')
         
         imgs['black'] = black_imgs
         imgs['white'] = white_imgs
-        imgs['blank'] = blank
 
         self.imgs = imgs
 
+        if ai_teams == None:
+            self.ai_teams = dict()
+        else:
+            self.ai_teams = ai_teams
+
+        self.ai_turn_delay = ai_turn_delay
 
         pygame.init()
         self.display = screen_size
@@ -394,6 +401,7 @@ class HexRenderEngine(AbstractRenderEngine):
 
         hover_tile = ''
         selected_tile = ''
+        frame = 0
         while True:
             glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
             glLoadIdentity()
@@ -445,6 +453,24 @@ class HexRenderEngine(AbstractRenderEngine):
             self.draw_pieces(self.imgs, self.zoom, self.camera_pos)
             pygame.display.flip()
 
+            if self.board.current_team in self.out_teams:
+                next_index = self.rule_engine.turn_order.index(self.board.current_team) + 1
+                if next_index in range(len(self.rule_engine.turn_order)):
+                    self.board.current_team = self.rule_engine.turn_order[next_index]
+                else:
+                    self.board.current_team = self.rule_engine.turn_order[0]
+            elif (not self.rule_engine.all_legal_moves(self.board.current_team, self.board) and len(self.rule_engine.teams) > 2) or \
+            self.board.current_team not in [self.board.get_tile(tile).piece.team.name for tile in self.board.royal_tiles if self.board.get_tile(tile).piece != None]:
+                self.out_teams.append(self.board.current_team)
+                next_index = self.rule_engine.turn_order.index(self.board.current_team) + 1
+                if next_index in range(len(self.rule_engine.turn_order)):
+                    self.board.current_team = self.rule_engine.turn_order[next_index]
+                else:
+                    self.board.current_team = self.rule_engine.turn_order[0]
+
+            if self.board.current_team in self.ai_teams and frame % self.ai_turn_delay == 0:
+                self.board = self.rule_engine.ai_play(self.board, False, self.ai_teams[self.board.current_team])
+
             prjMat = (GLfloat * 16)()
             glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
             
@@ -458,3 +484,4 @@ class HexRenderEngine(AbstractRenderEngine):
                     hover_tile = ''
 
             pygame.time.wait(10)
+            frame += 1

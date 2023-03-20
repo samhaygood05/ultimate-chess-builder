@@ -26,18 +26,18 @@ class StandardBoard(AbstractBoard):
         if board_state == None:
             if hexagonal:
                 self.board = [
-                [None, None, None, None, None, Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('rook', tp.WHITE)), Tile(Piece('knight', tp.WHITE)), Tile(Piece('king', tp.WHITE)), Tile(Piece('bishop', tp.WHITE))],
-                [None, None, None, None, Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(), Tile(Piece('bishop', tp.WHITE)), Tile(Piece('queen', tp.WHITE))],
-                [None, None, None, Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(Piece('bishop', tp.WHITE)), Tile(), Tile(Piece('knight', tp.WHITE))],
-                [None, None, Tile(), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(), Tile(), Tile(Piece('rook', tp.WHITE))],
-                [None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE))],
-                [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
-                [Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), Tile(), Tile(), None],
-                [Tile(Piece('rook', tp.BLACK)), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), Tile(), None, None],
-                [Tile(Piece('knight', tp.BLACK)), Tile(), Tile(Piece('bishop', tp.BLACK)), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), None, None, None],
-                [Tile(Piece('king', tp.BLACK)), Tile(Piece('bishop', tp.BLACK)), Tile(), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), None, None, None, None],
-                [Tile(Piece('bishop', tp.BLACK)), Tile(Piece('queen', tp.BLACK)), Tile(Piece('knight', tp.BLACK)), Tile(Piece('rook', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(), None, None, None, None, None]
-            ]
+                    [None, None, None, None, None, Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('rook', tp.WHITE)), Tile(Piece('knight', tp.WHITE)), Tile(Piece('king', tp.WHITE)), Tile(Piece('bishop', tp.WHITE))],
+                    [None, None, None, None, Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(), Tile(Piece('bishop', tp.WHITE)), Tile(Piece('queen', tp.WHITE))],
+                    [None, None, None, Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(Piece('bishop', tp.WHITE)), Tile(), Tile(Piece('knight', tp.WHITE))],
+                    [None, None, Tile(), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(), Tile(), Tile(), Tile(Piece('rook', tp.WHITE))],
+                    [None, Tile(), Tile(), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE)), Tile(Piece('pawn', tp.WHITE))],
+                    [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()],
+                    [Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), Tile(), Tile(), None],
+                    [Tile(Piece('rook', tp.BLACK)), Tile(), Tile(), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), Tile(), None, None],
+                    [Tile(Piece('knight', tp.BLACK)), Tile(), Tile(Piece('bishop', tp.BLACK)), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), Tile(), None, None, None],
+                    [Tile(Piece('king', tp.BLACK)), Tile(Piece('bishop', tp.BLACK)), Tile(), Tile(), Tile(Piece('pawn', tp.BLACK)), Tile(), Tile(), None, None, None, None],
+                    [Tile(Piece('bishop', tp.BLACK)), Tile(Piece('queen', tp.BLACK)), Tile(Piece('knight', tp.BLACK)), Tile(Piece('rook', tp.BLACK)), Tile(Piece('pawn', tp.BLACK)), Tile(), None, None, None, None, None]
+                ]
             else:
                 self.board = Variants.create_standard_board(tp.WHITE, tp.BLACK, 4)
         else:

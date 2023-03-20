@@ -33,7 +33,7 @@ limitations under the License.
 from teams.abstract_team import AbstractTeam
 
 class TimeTeam(AbstractTeam):
-    def __init__(self, name, direction, time_direction, allies=None, color=(1.0, 1.0, 1.0), is_ai=False):
+    def __init__(self, name, direction, time_direction, allies=None, color=(1.0, 1.0, 1.0)):
         self.name = name
         self.direction = direction
         self.perpendicular = (direction[1], -direction[0])
@@ -42,7 +42,6 @@ class TimeTeam(AbstractTeam):
         if allies != None:
             self.allies.extend(allies)
         self.color = color
-        self.is_ai = is_ai
 
 class TimeTeamPresets:
     WHITE = TimeTeam('white', (1, 0), 1)

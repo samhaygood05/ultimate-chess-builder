@@ -17,9 +17,10 @@ limitations under the License.
 from teams.team import TeamPresets as tp
 
 class Tile:
-    def __init__(self, piece=None, type=None):
+    def __init__(self, piece=None, type=None, tint=(1.0, 1.0, 1.0)):
         self.piece = piece
         self.type = type
+        self.tint = tint
 
     def transfer_piece(self, start_tile):
         new_end = Tile(start_tile.piece.moved(), self.type)

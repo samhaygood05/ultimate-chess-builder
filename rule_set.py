@@ -15,8 +15,9 @@ limitations under the License.
 '''
 
 class RuleSet:
-    def __init__(self, name, moveset, captureset, first_move, first_move_boost, multimove, promotion=None, team_overrides=None):
+    def __init__(self, name, points, moveset, captureset, first_move, first_move_boost, multimove, promotion=None, team_overrides=None):
         self.name = name
+        self.points = points
         self.moveset = moveset
         if captureset == None:
             self.captureset = moveset
