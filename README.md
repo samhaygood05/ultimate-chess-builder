@@ -6,6 +6,7 @@
  - Create custom pieces with their own movement rules
  - Supports any number of players
  - Pieces can be on multiple teams at once
+ - Computer players
  - Time Travel Mode (Similar to 5D Chess)
 
  ## To Do List (in no particular order)
