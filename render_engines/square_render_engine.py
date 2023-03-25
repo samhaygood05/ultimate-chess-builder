@@ -387,22 +387,20 @@ class SquareRenderEngine(AbstractRenderEngine):
             self.draw_pieces(self.imgs, self.zoom, self.camera_pos)
             pygame.display.flip()
 
-            if self.board.current_team in self.out_teams:
-                next_index = self.rule_engine.turn_order.index(self.board.current_team) + 1
-                if next_index in range(len(self.rule_engine.turn_order)):
-                    self.board.current_team = self.rule_engine.turn_order[next_index]
-                else:
-                    self.board.current_team = self.rule_engine.turn_order[0]
-            elif (not self.rule_engine.all_legal_moves(self.board.current_team, self.board) and len(self.rule_engine.teams) > 2) or \
+            if (not self.rule_engine.all_legal_moves(self.board.current_team, self.board) and len(self.rule_engine.teams) > 2) or \
             self.board.current_team not in [self.board.get_tile(tile).piece.team.name for tile in self.board.royal_tiles if self.board.get_tile(tile).piece != None]:
-                self.out_teams.append(self.board.current_team)
+                current_team = self.board.current_team
                 next_index = self.rule_engine.turn_order.index(self.board.current_team) + 1
                 if next_index in range(len(self.rule_engine.turn_order)):
                     self.board.current_team = self.rule_engine.turn_order[next_index]
                 else:
                     self.board.current_team = self.rule_engine.turn_order[0]
+                try:
+                    self.rule_engine.turn_order.remove(current_team)
+                except:
+                    pass
 
-            if self.board.current_team in self.ai_teams and frame % self.ai_turn_delay == 0:
+            if self.board.current_team in self.ai_teams and frame % self.ai_turn_delay == 0 and len(self.rule_engine.turn_order) > 1:
                 self.board = self.rule_engine.ai_play(self.board, False, self.ai_teams[self.board.current_team])
 
             prjMat = (GLfloat * 16)()

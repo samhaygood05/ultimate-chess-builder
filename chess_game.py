@@ -12,7 +12,7 @@ from teams.team import Team, TeamPresets as tp
 
 if __name__ == "__main__":
 
-    renderer = Variants.load('square/4player')
-    renderer.initialize((800, 600), {'white': 'random', 'red': 'minmax-0', 'black': 'minmax-1', 'green': 'minmax-2'}, 2)
+    renderer = Variants.load('square/4player_rebel_knights')
+    renderer.initialize((800, 600), {'white': 'random', 'red': 'random', 'black': 'random', 'green': 'minmax-2'}, 2)
     # SquareRenderEngine((800, 600)).initialize((800, 600), {'white': 'minmax-2', 'black': 'minmax-1'}, 2)
 
