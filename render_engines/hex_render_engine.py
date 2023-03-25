@@ -463,6 +463,11 @@ class HexRenderEngine(AbstractRenderEngine):
                     self.board.current_team = self.rule_engine.turn_order[0]
                 try:
                     self.rule_engine.turn_order.remove(current_team)
+                    if len(self.rule_engine.turn_order) == 1:
+                        teams_text = f'{self.rule_engine.turn_order[0]} won!'
+                    else:
+                        teams_text = f'teams remaining: {self.rule_engine.turn_order}'
+                    print(f'{current_team} eliminated,', teams_text)
                 except:
                     pass
 

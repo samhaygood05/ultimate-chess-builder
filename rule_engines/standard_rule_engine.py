@@ -214,7 +214,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                             legal_moves += [(Board.index_to_tile(row, col), move) for move in moves]
         return legal_moves
 
-    def get_team_score(self, board):
+    def get_board_score(self, board):
         scores = dict()
         for team in self.teams:
             scores[team] = 0
@@ -223,9 +223,45 @@ class StandardRuleEngine(AbstractRuleEngine):
             for col in range(len(board.board[row])):
                 tile = board.board[row][col]
                 if tile != None and tile.piece != None:
-                        scores[tile.piece.team.name] += self.rulesets[tile.piece.name].points
+                    for team in tile.piece.get_team_names():
+                        scores[team] += self.rulesets[tile.piece.name].points
         
         return scores
+    
+    def get_move_score(self, board: Board, start_tile, end_tile):
+        scores = dict()
+        for team in self.teams:
+            scores[team] = 0
+        
+        if start_tile == end_tile:
+            return scores
+
+        if board.get_tile(start_tile) != None and board.get_tile(start_tile).piece != None:
+            start_tile_point = self.rulesets[board.get_tile(start_tile).piece.name].points
+            start_tile_teams = board.get_tile(start_tile).piece.get_team_names()
+        else:
+            start_tile_point = 0
+            start_tile_teams = []
+
+        if board.get_tile(end_tile) != None and board.get_tile(end_tile).piece != None:
+            end_tile_point = self.rulesets[board.get_tile(end_tile).piece.name].points
+            end_tile_teams = board.get_tile(end_tile).piece.get_team_names()
+        else:
+            end_tile_point = 0
+            end_tile_teams = []
+        
+        for team in end_tile_teams:
+            scores[team] -= end_tile_point
+
+        if board.get_tile(start_tile) != None and board.get_tile(start_tile).piece != None:
+            for team in start_tile_teams:
+                if self.rulesets[board.get_tile(start_tile).piece.name].promotion != None and end_tile in self.promotion_tiles[team]:
+                    promotion_points = self.rulesets[self.rulesets[board.get_tile(start_tile).piece.name].promotion].points
+                    scores[team] += promotion_points - start_tile_point
+
+        return scores
+
+
 
     def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False, check=True, simulated_move=False) -> Board:
         if not illegal_moves:
@@ -264,12 +300,14 @@ class StandardRuleEngine(AbstractRuleEngine):
         else:
             next_team = self.turn_order[0]
         new_board_obj = Board(next_team, new_board, royal_tiles)
-        if not simulated_move:
-            print(f'{board.current_team} moved {piece.name} from {start_tile} to {end_tile}, scores: {self.get_team_score(new_board_obj)}')
+        # if not simulated_move:
+        #     print(f'{board.current_team} moved {piece.name} from {start_tile} to {end_tile}')
         return new_board_obj
     
-    def ai_play(self, board: Board, check=True, ai_type='random', simulated_move=False):
+    def ai_play(self, board: Board, check=True, ai_type='random', simulated_move=False, return_move_score=False):
+        start_board = board
         new_board = board
+        ai_start_tile, ai_end_tile = ('a1', 'a1')
         if ai_type == 'random_prioritize_capture':
             ai_legal_moves = self.all_legal_moves(board.current_team, board, True)
             if ai_legal_moves:
@@ -282,17 +320,25 @@ class StandardRuleEngine(AbstractRuleEngine):
             if ai_legal_moves:
                 ai_start_tile, ai_end_tile = random.choice(ai_legal_moves)
                 new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
-        elif ai_type == 'minmax-0':
+        elif ai_type[:6] == 'minmax':
+            strength = int(ai_type.split('-')[1])
+            try:
+                opponent_strength = int(ai_type.split('-')[2])
+            except:
+                opponent_strength = 0
+            opponent_strength = min(opponent_strength, strength - 1)
+            opponent_strength = max(opponent_strength, 0)
             ai_legal_moves = self.all_legal_moves(board.current_team, board)
-            if ai_legal_moves:
-                max_scoring_move = None
-                scores = []
+            max_scoring_move = None
+            scores = []
+            if strength == 0 and ai_legal_moves:
                 for ai_start_tile, ai_end_tile in ai_legal_moves:
-                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
-                    team_points = self.get_team_score(new_board)
+                    team_points = self.get_move_score(new_board, ai_start_tile, ai_end_tile)
                     maximize = 0
                     for team in team_points:
-                        if team in self.teams[board.current_team].allies:
+                        if team not in self.turn_order:
+                            continue
+                        elif team in self.teams[board.current_team].allies:
                             maximize += team_points[team]
                         else:
                             maximize -= team_points[team]
@@ -306,57 +352,33 @@ class StandardRuleEngine(AbstractRuleEngine):
                 if filtered_moves:
                     ai_start_tile, ai_end_tile = random.choice(filtered_moves)
                     new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
-        elif ai_type == 'minmax-1':
-            ai_legal_moves = self.all_legal_moves(board.current_team, board)
-            if ai_legal_moves:
-                max_scoring_move = None
-                scores = []
+            elif ai_legal_moves:
                 for ai_start_tile, ai_end_tile in ai_legal_moves:
+                    accumulated_scores = self.get_move_score(new_board, ai_start_tile, ai_end_tile)
                     new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
-                    new_board = self.ai_play(new_board, check, 'minmax-0', True)
-                    team_points = self.get_team_score(new_board)
+                    for i in range(strength):
+                        new_board, turn_score = self.ai_play(new_board, check, f'minmax-{opponent_strength}-{opponent_strength-1}', True, True)
+                        for team in accumulated_scores:
+                            accumulated_scores[team] += turn_score[team]
                     maximize = 0
-                    for team in team_points:
-                        if team in self.teams[board.current_team].allies:
-                            maximize += team_points[team]
+                    for team in accumulated_scores:
+                        if team not in self.turn_order:
+                            continue
+                        elif team in self.teams[board.current_team].allies:
+                            maximize += accumulated_scores[team]
                         else:
-                            maximize -= team_points[team]
+                            maximize -= accumulated_scores[team]
                     scores += [maximize]
                     if max_scoring_move == None:
                         max_scoring_move = maximize
                     else:
                         max_scoring_move = max(maximize, max_scoring_move)
-
                 filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
                 if filtered_moves:
                     ai_start_tile, ai_end_tile = random.choice(filtered_moves)
                     new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
-        elif ai_type == 'minmax-2':
-            ai_legal_moves = self.all_legal_moves(board.current_team, board)
-            if ai_legal_moves:
-                max_scoring_move = None
-                scores = []
-                for ai_start_tile, ai_end_tile in ai_legal_moves:
-                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
-                    new_board = self.ai_play(new_board, check, 'minmax-0', True)
-                    new_board = self.ai_play(new_board, check, 'minmax-0', True)
-                    team_points = self.get_team_score(new_board)
-                    maximize = 0
-                    for team in team_points:
-                        if team in self.teams[board.current_team].allies:
-                            maximize += team_points[team]
-                        else:
-                            maximize -= team_points[team]
-                    scores += [maximize]
-                    if max_scoring_move == None:
-                        max_scoring_move = maximize
-                    else:
-                        max_scoring_move = max(maximize, max_scoring_move)
-
-                filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
-                if filtered_moves:
-                    ai_start_tile, ai_end_tile = random.choice(filtered_moves)
-                    new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
+        if return_move_score:
+            return new_board, self.get_move_score(start_board, ai_start_tile, ai_end_tile)
         return new_board
 
     def __str__(self):

@@ -335,6 +335,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         hover_tile = ''
         selected_tile = ''
         frame = 0
+        turn = 1
         while True:
 
             glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -352,6 +353,8 @@ class SquareRenderEngine(AbstractRenderEngine):
                         if selected_tile == '':
                             selected_tile = hover_tile
                         else:
+                            if self.board.current_team == self.rule_engine.turn_order[-1]:
+                                turn += 1
                             self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves, False)
                             selected_tile = ''
                     elif event.button == 3:
@@ -397,10 +400,16 @@ class SquareRenderEngine(AbstractRenderEngine):
                     self.board.current_team = self.rule_engine.turn_order[0]
                 try:
                     self.rule_engine.turn_order.remove(current_team)
+                    if len(self.rule_engine.turn_order) == 1:
+                        print(f'turn {turn}: {current_team} eliminated, {self.rule_engine.turn_order[0]} wins!')
+                    else:
+                        print(f'turn {turn}: {current_team} eliminated, teams remaining: [{", ".join(self.rule_engine.turn_order)}]')
                 except:
                     pass
 
             if self.board.current_team in self.ai_teams and frame % self.ai_turn_delay == 0 and len(self.rule_engine.turn_order) > 1:
+                if self.board.current_team == self.rule_engine.turn_order[-1]:
+                    turn += 1
                 self.board = self.rule_engine.ai_play(self.board, False, self.ai_teams[self.board.current_team])
 
             prjMat = (GLfloat * 16)()
