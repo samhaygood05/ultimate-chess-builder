@@ -24,10 +24,10 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 import colorsys
-import random
+import copy
 
 class SquareRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False, render_on_init=False):
+    def __init__(self, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False):
         if board == None:
             self.board = Board()
         else:
@@ -40,10 +40,11 @@ class SquareRenderEngine(AbstractRenderEngine):
         self.illegal_moves = illegal_moves
 
         self.imgs = dict()
-
-        if render_on_init:
-            self.initialize(screen_size)
     
+    def copy(self):
+        copy_engine = SquareRenderEngine(board=self.board.copy(), rule_engine=self.rule_engine.copy(), illegal_moves=self.illegal_moves)
+        return copy_engine
+
     def draw_board(self, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()
         glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
@@ -314,9 +315,6 @@ class SquareRenderEngine(AbstractRenderEngine):
 
         self.ai_turn_delay = ai_turn_delay
 
-        self.out_teams = []
-
-        pygame.init()
         self.display = screen_size
         pygame.display.set_mode(self.display, DOUBLEBUF|OPENGL)
         self.screen_ratio = self.display[0]/self.display[1]
@@ -328,7 +326,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
         self.camera_pos = [-columns, -rows, 0.5]
-        self.main_loop()
+        return self.main_loop()
 
     def main_loop(self):
 
@@ -401,9 +399,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                 try:
                     self.rule_engine.turn_order.remove(current_team)
                     if len(self.rule_engine.turn_order) == 1:
-                        print(f'turn {turn}: {current_team} eliminated, {self.rule_engine.turn_order[0]} wins!')
-                    else:
-                        print(f'turn {turn}: {current_team} eliminated, teams remaining: [{", ".join(self.rule_engine.turn_order)}]')
+                        break
                 except:
                     pass
 
@@ -427,6 +423,8 @@ class SquareRenderEngine(AbstractRenderEngine):
             pygame.time.wait(10)
             frame += 1
 
+        pygame.quit()
+        return self.rule_engine.turn_order[0], turn
 
     def __str__(self) -> str:
         return f"Board: {self.board}\nRules: {self.rule_engine}"

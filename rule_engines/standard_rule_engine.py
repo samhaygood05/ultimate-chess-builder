@@ -21,6 +21,7 @@ from tile import Tile
 from teams.team import TeamPresets as tp
 from rule_engines.abstract_rule_engine import AbstractRuleEngine
 import random
+import copy
 
 class StandardRuleEngine(AbstractRuleEngine):
     def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False, hexagonal=False):
@@ -67,6 +68,10 @@ class StandardRuleEngine(AbstractRuleEngine):
             self.turn_order = turn_order
         
         self.multiteam_capture_ally = multiteam_capture_ally
+
+    def copy(self):
+        copy_engine = StandardRuleEngine(self.rulesets, self.teams, self.promotion_tiles, copy.copy(self.turn_order), self.multiteam_capture_ally)
+        return copy_engine
 
     def add_ruleset(self, tile, board: Board, ruleset: RuleSet):
         piece = board.get_tile(tile).piece
@@ -321,6 +326,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                 ai_start_tile, ai_end_tile = random.choice(ai_legal_moves)
                 new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
         elif ai_type[:6] == 'minmax':
+            mode = ai_type.split('-')[0]
             strength = int(ai_type.split('-')[1])
             try:
                 opponent_strength = int(ai_type.split('-')[2])
@@ -356,11 +362,16 @@ class StandardRuleEngine(AbstractRuleEngine):
                 for ai_start_tile, ai_end_tile in ai_legal_moves:
                     accumulated_scores = self.get_move_score(new_board, ai_start_tile, ai_end_tile)
                     new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
+                    maximize = 0
                     for i in range(strength):
                         new_board, turn_score = self.ai_play(new_board, check, f'minmax-{opponent_strength}-{opponent_strength-1}', True, True)
+                        strength_factor = 1
+                        if mode == 'minmax_sib': # Sooner is Better
+                            strength_factor = max(0, min(1, 1/(1 + (i+1)//len(self.turn_order))))
+                        elif mode == 'minmax_lib': # Later is Better
+                            strength_factor = max(0, min(1, 1 - 1/(1 + (i+1)//len(self.turn_order))))
                         for team in accumulated_scores:
-                            accumulated_scores[team] += turn_score[team]
-                    maximize = 0
+                            accumulated_scores[team] += turn_score[team] * strength_factor
                     for team in accumulated_scores:
                         if team not in self.turn_order:
                             continue
@@ -373,7 +384,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                         max_scoring_move = maximize
                     else:
                         max_scoring_move = max(maximize, max_scoring_move)
-                filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
+                filtered_moves = [ai_legal_moves[i] for i in range(len(scores)) if scores[i] == max_scoring_move]
                 if filtered_moves:
                     ai_start_tile, ai_end_tile = random.choice(filtered_moves)
                     new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)

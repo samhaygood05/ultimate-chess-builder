@@ -402,6 +402,7 @@ class HexRenderEngine(AbstractRenderEngine):
         hover_tile = ''
         selected_tile = ''
         frame = 0
+        turn = 1
         while True:
             glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
             glLoadIdentity()
@@ -418,6 +419,8 @@ class HexRenderEngine(AbstractRenderEngine):
                         if selected_tile == '':
                             selected_tile = hover_tile
                         else:
+                            if self.board.current_team == self.rule_engine.turn_order[-1]:
+                                turn += 1
                             self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves, False)
                             selected_tile = ''
                     elif event.button == 3:
