@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+from unittest import skip
 from rule_set import RuleSet
-from boards.standard_board import StandardBoard as Board
-from teams.team import Team
-from tile import Tile
-from teams.team import TeamPresets as tp
-from rule_engines.abstract_rule_engine import AbstractRuleEngine
+from boards import StandardBoard
+from rule_engines import AbstractRuleEngine
+from teams import Team
+from teams import TeamPresets as tp
 import random
 import copy
 
@@ -73,7 +73,7 @@ class StandardRuleEngine(AbstractRuleEngine):
         copy_engine = StandardRuleEngine(self.rulesets, self.teams, self.promotion_tiles, copy.copy(self.turn_order), self.multiteam_capture_ally)
         return copy_engine
 
-    def add_ruleset(self, tile, board: Board, ruleset: RuleSet):
+    def add_ruleset(self, tile, board: StandardBoard, ruleset: RuleSet):
         piece = board.get_tile(tile).piece
 
         if piece == None:
@@ -106,7 +106,7 @@ class StandardRuleEngine(AbstractRuleEngine):
         if captureset == None:
             captureset = moveset
 
-        row, col = Board.tile_to_index(tile)
+        row, col = StandardBoard.tile_to_index(tile)
         legal_moves = []
         direction = team.direction
         side_direction = team.perpendicular
@@ -124,7 +124,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                         if target == None:
                             break
                         if target.piece == None:
-                            legal_moves.append(Board.index_to_tile(new_row, new_col))
+                            legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
                         else:
                             break
                         new_row += delta[0]
@@ -134,7 +134,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                         target = board.board[new_row][new_col]
                         if target != None:
                             if target.piece == None:
-                                legal_moves.append(Board.index_to_tile(new_row, new_col))
+                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
                                 if first_move and not piece.has_moved:
                                     for i in range(first_move_boost - 1):
                                         new_row += delta[0]
@@ -142,7 +142,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                                         try:
                                             target = board.board[new_row][new_col]
                                             if target.piece == None:
-                                                legal_moves.append(Board.index_to_tile(new_row, new_col))
+                                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
                                         except:
                                             break
             # Logic for Capture Set
@@ -159,7 +159,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                         if target.piece == None:
                             pass
                         elif not target.piece.is_allies(allies, not multiteam_capture_ally):
-                            legal_moves.append(Board.index_to_tile(new_row, new_col))
+                            legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
                             break
                         else:
                             break
@@ -170,12 +170,13 @@ class StandardRuleEngine(AbstractRuleEngine):
                         target = board.board[new_row][new_col]
                         if target != None and target.piece != None:
                             if not target.piece.is_allies(allies, not multiteam_capture_ally):
-                                legal_moves.append(Board.index_to_tile(new_row, new_col))
+                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
         return legal_moves
 
 
-    def get_legal_moves(self, tile, board: Board, check=False):
+    def get_legal_moves(self, tile, board: StandardBoard, check=False):
         piece = board.get_tile(tile)
+        current_team = board.current_team
         legal_moves = []
 
         # None Tiles
@@ -189,34 +190,35 @@ class StandardRuleEngine(AbstractRuleEngine):
         # All Other Pieces
         legal_moves.extend(self.add_ruleset(tile, board, self.rulesets[piece.piece.name]))
 
-        if check and piece.is_royal:
-            board_copy = board.copy()
-            for move in legal_moves:
-                board_moved = self.play_move(board_copy, tile, move, check=False)
-                for royal_tile in board_moved.royal_tiles:
-                    if self.is_in_check(royal_tile, board_moved):
-                        legal_moves.remove(move)
-                        break
-
         return legal_moves
 
-    def is_in_check(self, tile, board: Board):
+    def is_in_check(self, team, board: StandardBoard):
         return False
+        team_royal_tile = [tile for tile in board.royal_tiles if team in board.get_tile(tile).piece.get_team_names]
+        enemy_teams = [enemy for enemy in self.turn_order if enemy not in board.get_tile(team_royal_tile[0]).piece.get_allies_intersection]
 
-    def all_legal_moves(self, team, board: Board, filter_capture=False):
+        for ruleset in self.rulesets:
+            if ruleset.team_overrides != None and set(enemy_teams) & set(ruleset.team_overrides.keys()):
+                inverse_captureset
+            else:
+                inverse_captureset = ruleset.reverse_captureset()
+                multimove = ruleset.multimove
+
+
+    def all_legal_moves(self, team, board: StandardBoard, filter_capture=False):
         legal_moves = []
         for row in range(len(board.board)):
             for col in range(len(board.board[row])):
                 tile = board.board[row][col]
                 if tile != None and tile.piece != None and team == tile.piece.team.name:
-                    moves = self.get_legal_moves(Board.index_to_tile(row, col), board)
+                    moves = self.get_legal_moves(StandardBoard.index_to_tile(row, col), board)
                     if moves:
                         if filter_capture:
                             filtered_moves = [move for move in moves if board.get_tile(move).piece != None]
                             if filtered_moves:
-                                legal_moves += [(Board.index_to_tile(row, col), move) for move in filtered_moves]
+                                legal_moves += [(StandardBoard.index_to_tile(row, col), move) for move in filtered_moves]
                         else:
-                            legal_moves += [(Board.index_to_tile(row, col), move) for move in moves]
+                            legal_moves += [(StandardBoard.index_to_tile(row, col), move) for move in moves]
         return legal_moves
 
     def get_board_score(self, board):
@@ -233,7 +235,7 @@ class StandardRuleEngine(AbstractRuleEngine):
         
         return scores
     
-    def get_move_score(self, board: Board, start_tile, end_tile):
+    def get_move_score(self, board: StandardBoard, start_tile, end_tile):
         scores = dict()
         for team in self.teams:
             scores[team] = 0
@@ -268,7 +270,7 @@ class StandardRuleEngine(AbstractRuleEngine):
 
 
 
-    def play_move(self, board: Board, start_tile, end_tile, illegal_moves=False, check=True, simulated_move=False) -> Board:
+    def play_move(self, board: StandardBoard, start_tile, end_tile, illegal_moves=False, check=True, simulated_move=False) -> StandardBoard:
         if not illegal_moves:
             legal_moves = self.get_legal_moves(start_tile, board, check)
             if end_tile not in legal_moves:
@@ -279,8 +281,8 @@ class StandardRuleEngine(AbstractRuleEngine):
             print("You Can't Play Your Opponent's Pieces")
             return board
             
-        start = Board.tile_to_index(start_tile)
-        end = Board.tile_to_index(end_tile)
+        start = StandardBoard.tile_to_index(start_tile)
+        end = StandardBoard.tile_to_index(end_tile)
 
         piece = board.get_tile(start_tile).piece
 
@@ -304,12 +306,12 @@ class StandardRuleEngine(AbstractRuleEngine):
             next_team = self.turn_order[next_index]
         else:
             next_team = self.turn_order[0]
-        new_board_obj = Board(next_team, new_board, royal_tiles)
+        new_board_obj = StandardBoard(next_team, new_board, royal_tiles)
         # if not simulated_move:
         #     print(f'{board.current_team} moved {piece.name} from {start_tile} to {end_tile}')
         return new_board_obj
     
-    def ai_play(self, board: Board, check=True, ai_type='random', simulated_move=False, return_move_score=False):
+    def ai_play(self, board: StandardBoard, check=True, ai_type='random', simulated_move=False, return_move_score=False):
         start_board = board
         new_board = board
         ai_start_tile, ai_end_tile = ('a1', 'a1')
@@ -326,7 +328,7 @@ class StandardRuleEngine(AbstractRuleEngine):
                 ai_start_tile, ai_end_tile = random.choice(ai_legal_moves)
                 new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
         elif ai_type[:6] == 'minmax':
-            mode = ai_type.split('-')[0]
+            mode = ai_type.split('-')[0].split('_')[1:]
             strength = int(ai_type.split('-')[1])
             try:
                 opponent_strength = int(ai_type.split('-')[2])
@@ -360,18 +362,37 @@ class StandardRuleEngine(AbstractRuleEngine):
                     new_board = self.play_move(board, ai_start_tile, ai_end_tile, False, check, simulated_move)
             elif ai_legal_moves:
                 for ai_start_tile, ai_end_tile in ai_legal_moves:
-                    accumulated_scores = self.get_move_score(new_board, ai_start_tile, ai_end_tile)
-                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
+                    skip_move = False
                     maximize = 0
+                    accumulated_scores = self.get_move_score(new_board, ai_start_tile, ai_end_tile)
+                    try:
+                        if mode[1] == 'smart' and accumulated_scores[board.current_team] == -900:
+                            scores += -99999
+                            continue
+                        elif mode[1] == 'smart' and -900 in accumulated_scores.values():
+                            scores += 99999
+                            continue
+                    except:
+                        pass
+                    new_board = self.play_move(board.copy(), ai_start_tile, ai_end_tile, False, check, True)
                     for i in range(strength):
-                        new_board, turn_score = self.ai_play(new_board, check, f'minmax-{opponent_strength}-{opponent_strength-1}', True, True)
+                        new_board, turn_score = self.ai_play(new_board, check, f'{ai_type.split("-"[0])}-{opponent_strength}-{opponent_strength-1}', True, True)
+                        try:
+                            if mode[1] == 'smart' and turn_score[board.current_team] == -900:
+                                skip_move = False
+                                break
+                        except:
+                            pass
                         strength_factor = 1
-                        if mode == 'minmax_sib': # Sooner is Better
+                        if mode[0] == 'sib': # Sooner is Better
                             strength_factor = max(0, min(1, 1/(1 + (i+1)//len(self.turn_order))))
-                        elif mode == 'minmax_lib': # Later is Better
+                        elif mode[0] == 'lib': # Later is Better
                             strength_factor = max(0, min(1, 1 - 1/(1 + (i+1)//len(self.turn_order))))
                         for team in accumulated_scores:
                             accumulated_scores[team] += turn_score[team] * strength_factor
+                    if skip_move:
+                        scores += -99999
+                        continue
                     for team in accumulated_scores:
                         if team not in self.turn_order:
                             continue

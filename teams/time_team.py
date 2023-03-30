@@ -30,7 +30,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from teams.abstract_team import AbstractTeam
+from teams import AbstractTeam
 
 class TimeTeam(AbstractTeam):
     def __init__(self, name, direction, time_direction, allies=None, color=(1.0, 1.0, 1.0)):

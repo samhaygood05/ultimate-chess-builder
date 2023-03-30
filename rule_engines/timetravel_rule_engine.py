@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from rule_engines.abstract_rule_engine import AbstractRuleEngine
-from boards.poly_board import PolyBoard
+from boards import PolyBoard
+from rule_engines import AbstractRuleEngine
 from rule_set import RuleSet
-from teams.time_team import TimeTeam, TimeTeamPresets as tp
+from teams import TimeTeam, TimeTeamPresets as tp
 from tile import Tile
 import copy
 

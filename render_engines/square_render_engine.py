@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from render_engines.abstract_render_engine import AbstractRenderEngine
-from rule_engines.standard_rule_engine import StandardRuleEngine as RuleEngine
-from boards.standard_board import StandardBoard as Board
+from boards import StandardBoard
+from rule_engines import StandardRuleEngine
+from render_engines import AbstractRenderEngine
 import pygame
 from PIL import Image
 from pygame.locals import *
@@ -27,13 +27,13 @@ import colorsys
 import copy
 
 class SquareRenderEngine(AbstractRenderEngine):
-    def __init__(self, board: Board = None, rule_engine: RuleEngine = None, illegal_moves=False):
+    def __init__(self, board: StandardBoard = None, rule_engine: StandardRuleEngine = None, illegal_moves=False):
         if board == None:
-            self.board = Board()
+            self.board = StandardBoard()
         else:
             self.board = board
         if rule_engine == None:
-            self.rule_engine = RuleEngine()
+            self.rule_engine = StandardRuleEngine()
         else:
             self.rule_engine = rule_engine
 
@@ -67,13 +67,13 @@ class SquareRenderEngine(AbstractRenderEngine):
         selected_color=(1.0, 0.0, 0.0)
         hover_color=(0.0, 1.0, 1.0)
         hover_highlight_color=(0.0, 1.0, 0.0)
-        tiles_highlight = [Board.tile_to_index(tile) for tile in highlight_tiles]
+        tiles_highlight = [StandardBoard.tile_to_index(tile) for tile in highlight_tiles]
         if selected_tile != '':
-            tile_selected = [Board.tile_to_index(selected_tile)]
+            tile_selected = [StandardBoard.tile_to_index(selected_tile)]
         else:
             tile_selected = []
         if hover_tile != '':
-            tile_hover = [Board.tile_to_index(hover_tile)]
+            tile_hover = [StandardBoard.tile_to_index(hover_tile)]
         else:
             tile_hover = []
 
@@ -150,7 +150,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                 if not on_screen:
                     continue
 
-                tile = Board.index_to_tile(row, column)
+                tile = StandardBoard.index_to_tile(row, column)
                 piece = self.board.get_tile(tile)
                 if piece is None:
                     continue
@@ -181,7 +181,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                 glVertex3fv(quad[3])
                 glEnd()
 
-                tile_name = Board.index_to_tile(row, column)
+                tile_name = StandardBoard.index_to_tile(row, column)
 
                 quads[tile_name] = quad
         
@@ -210,7 +210,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                 secondary_piece_color = (1.0, 1.0, 1.0)
                 trinary_piece_color = (1.0, 1.0, 1.0)
                 quadinary_piece_color = (1.0, 1.0, 1.0)
-                tile = Board.index_to_tile(row, column)
+                tile = StandardBoard.index_to_tile(row, column)
                 tile = self.board.get_tile(tile)
                 if tile == None:
                     continue

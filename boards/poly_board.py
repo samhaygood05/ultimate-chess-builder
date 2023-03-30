@@ -10,11 +10,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from boards.abstract_board import AbstractBoard
-from boards.standard_board import StandardBoard
+from boards.standard_board import AbstractBoard, StandardBoard
 from tile import Tile
 from variants import Variants
-from teams.time_team import TimeTeamPresets as tp
+from teams import TimeTeamPresets as tp
 import copy
 
 class PolyBoard(AbstractBoard):

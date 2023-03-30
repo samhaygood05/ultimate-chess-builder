@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from boards.abstract_board import AbstractBoard
+from boards import AbstractBoard
 from tile import Tile
 from piece import Piece
-from teams.team import TeamPresets as tp
+from teams import TeamPresets as tp
 from variants import Variants
 import copy
 

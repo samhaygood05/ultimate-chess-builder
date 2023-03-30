@@ -15,7 +15,6 @@ limitations under the License.
 '''
 
 from abc import ABC, abstractmethod
-import pygame as pg
 
 class AbstractRenderEngine(ABC):
     @abstractmethod

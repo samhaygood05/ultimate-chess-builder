@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from render_engines.abstract_render_engine import AbstractRenderEngine
-from rule_engines.standard_rule_engine import StandardRuleEngine
-from boards.standard_board import StandardBoard
+from boards import StandardBoard
+from rule_engines import StandardRuleEngine
+from render_engines import AbstractRenderEngine
 import pygame
 from PIL import Image
 from pygame.locals import *

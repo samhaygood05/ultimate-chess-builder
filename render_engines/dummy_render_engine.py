@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from render_engines.abstract_render_engine import AbstractRenderEngine
-from boards.abstract_board import AbstractBoard
-from boards.standard_board import StandardBoard
-from rule_engines.abstract_rule_engine import AbstractRuleEngine
-from rule_engines.standard_rule_engine import StandardRuleEngine
+from boards import *
+from rule_engines import *
+from render_engines import AbstractRenderEngine
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 from concurrent.futures import ThreadPoolExecutor
 import concurrent
+import numpy as np
 
 class DummyRenderEngine(AbstractRenderEngine):
     def __init__(self, board: AbstractBoard = None, rule_engine: AbstractRenderEngine = None):
@@ -78,109 +78,73 @@ class DummyRenderEngine(AbstractRenderEngine):
         avg_turns = {ai: 0 for ai in ai_teams.values()}
         for j in range(games):
             dummy_render_engine = self.copy()
-            print(f'started sample {i + 1} game {j + 1}')
             winner, turns = dummy_render_engine.initialize(ai_teams)
-            print(f'finished sample {i + 1} game {j + 1}: {ai_teams[winner]} won in {turns} turns')
+            self.completed_games += 1
+            print(f'finished game {self.completed_games} out of {self.total_games}: {ai_teams[winner]} won in {turns} turns')
             wins[ai_teams[winner]] += 1
             avg_turns[ai_teams[winner]] += turns
         return wins, avg_turns
 
-    def test_ais(self, ai_list, samples, games):
+    def test_ais(self, ai_list, samples, games, save=False):
         win_percent_dist = {ai: [] for ai in ai_list}
         avg_turn_dist = {ai: [] for ai in ai_list}
+        relative_elo_rating = {ai: 0 for ai in ai_list}
         ai_teams = dict(zip(self.rule_engine.turn_order, ai_list))
+
+        self.total_games = samples*games
+        self.completed_games = 0
 
         plt.figure(figsize=(15, 5))
 
         with ThreadPoolExecutor() as executor:
-            for i in range(samples):
-                future_to_results = {executor.submit(self.run_games, ai_teams, i, games): i for i in range(samples)}
-                for future in concurrent.futures.as_completed(future_to_results):
-                    i = future_to_results[future]
-                    wins, avg_turns = future.result()
+            # for i in range(samples):
+            future_to_results = {executor.submit(self.run_games, ai_teams, i, games): i for i in range(samples)}
+            for future in concurrent.futures.as_completed(future_to_results):
+                i = future_to_results[future]
+                wins, avg_turns = future.result()
 
-                    avg_turns = {ai: avg_turns[ai] / games for ai in avg_turns}
-                    win_percent = {ai: wins[ai] / games for ai in wins}
-                    for ai in win_percent:
-                        win_percent_dist[ai].append(win_percent[ai])
+                avg_turns = {ai: avg_turns[ai] / games for ai in avg_turns}
+                win_percent = {ai: wins[ai] / games for ai in wins}
+                relative_elo_rating = {ai: relative_elo_rating[ai] + 32*(wins[ai] - sum(wins[enemy] for enemy in wins if enemy != ai)) for ai in relative_elo_rating}
+                for ai in win_percent:
+                    win_percent_dist[ai].append(win_percent[ai])
 
-                    for ai in avg_turns:
-                        avg_turn_dist[ai].append(avg_turns[ai])
+                for ai in avg_turns:
+                    avg_turn_dist[ai].append(avg_turns[ai])
 
-                    print(f'win %: {win_percent}\navg turns: {avg_turns}')
+            plt.clf()
+            # Create the win percent distribution subplot (1 row, 2 columns, 1st plot)
+            plt.subplot(1, 2, 1)
+            for team, win_rate in win_percent_dist.items():
+                n, bins, patches = plt.hist(win_rate, bins=20, alpha=0.75, label=team)
+                mean_win_percent = np.mean(win_rate)
+                std_win_percent = np.std(win_rate)
+                bar_color = patches[0].get_facecolor()
+                plt.axvline(mean_win_percent, linestyle='dashed', linewidth=1, color=bar_color)
+                plt.text(mean_win_percent, plt.gca().get_ylim()[1] * 0.01, f'{mean_win_percent:.2f}', color=bar_color)
+            plt.xlabel('Win %')
+            plt.ylabel('Frequency')
+            plt.legend(loc='upper right')
+            plt.grid(True)
 
-                plt.clf()
-                # Create the win percent distribution subplot (1 row, 2 columns, 1st plot)
-                plt.subplot(1, 2, 1)
-                for team, win_rate in win_percent_dist.items():
-                    plt.hist(win_rate, bins=20, alpha=0.75, label=team)
-                plt.xlabel('Win %')
-                plt.ylabel('Frequency')
-                plt.title('Win % Distribution')
-                plt.legend(loc='upper right')
-                plt.grid(True)
+            # Create the average number of turns distribution subplot (1 row, 2 columns, 2nd plot)
+            plt.subplot(1, 2, 2)
+            for team, turns in avg_turn_dist.items():
+                n, bins, patches = plt.hist(turns, bins=20, alpha=0.75, label=team)
+                mean_turns = np.mean(turns)
+                std_turns = np.std(turns)
+                bar_color = patches[0].get_facecolor()
+                plt.axvline(mean_turns, linestyle='dashed', linewidth=1, color=bar_color)
+                plt.text(mean_turns, plt.gca().get_ylim()[1] * 0.01, f'{mean_turns:.1f}', color=bar_color)
+            plt.xlabel('Average Number of Turns')
+            plt.ylabel('Frequency')
+            plt.legend(loc='upper right')
+            plt.grid(True)
 
-                # Create the average number of turns distribution subplot (1 row, 2 columns, 2nd plot)
-                plt.subplot(1, 2, 2)
-                for team, turns in avg_turn_dist.items():
-                    plt.hist(turns, bins=20, alpha=0.75, label=team)
-                plt.xlabel('Average Number of Turns')
-                plt.ylabel('Frequency')
-                plt.title('Average Number of Turns Distribution')
-                plt.legend(loc='upper right')
-                plt.grid(True)
-
-                plt.draw()
-                plt.pause(0.1)
+            plt.draw()
+            plt.pause(0.1)
 
         # Display both subplots at the same time
-        plt.show()
+        if save:
+            plt.savefig(f"algorithm_stats/{' vs '.join(ai_list)}.png")
         return win_percent_dist, avg_turn_dist
-
-
-    # def test_ais(self, ai_list, samples, games):
-    #     win_percent_dist = {ai:[] for ai in ai_list}
-    #     avg_turn_dist = {ai:[] for ai in ai_list}
-    #     ai_teams = dict(zip(self.rule_engine.turn_order, ai_list))
-
-    #     for i in range(samples):
-    #         wins = {ai:0 for ai in ai_list}
-    #         avg_turns = {ai:0 for ai in ai_list}
-    #         for j in range(games):
-    #             dummy_render_engine = self.copy()
-    #             winner, turns = dummy_render_engine.initialize(ai_teams)
-    #             print(f'sample {i+1} game {j+1}: {ai_teams[winner]} won in {turns} turns')
-    #             wins[ai_teams[winner]] += 1
-    #             avg_turns[ai_teams[winner]] += turns
-    #         avg_turns = {ai:avg_turns[ai]/games for ai in avg_turns}
-    #         win_percent = {ai:wins[ai]/games for ai in wins}
-    #         win_percent_dist = {ai:win_percent_dist[ai].append(win_percent[ai]) for ai in win_percent}
-    #         avg_turn_dist = {ai:avg_turn_dist[ai].append(avg_turns[ai]) for ai in avg_turns}
-    #         print(f'win %: {win_percent}\navg turns: {avg_turns}')
-
-    #         plt.clf()
-    #         # Create the win-loss distribution subplot (1 row, 2 columns, 1st plot)
-    #         plt.subplot(1, 2, 1)
-    #         for team, wins in win_percent_dist.items():
-    #             plt.hist(wins, bins=20, alpha=0.75, label=[team])
-    #         plt.xlabel('Win-Loss Ratio (minmax_sib-8)')
-    #         plt.ylabel('Frequency')
-    #         plt.title('Win-Loss Distribution')
-    #         plt.legend(loc='upper right')
-    #         plt.grid(True)
-
-    #         # Create the average number of turns distribution subplot (1 row, 2 columns, 2nd plot)
-    #         plt.subplot(1, 2, 2)
-    #         for team, turns in avg_turn_dist.items():
-    #             plt.hist(turns, bins=20, alpha=0.75, label=team)
-    #         plt.xlabel('Average Number of Turns')
-    #         plt.ylabel('Frequency')
-    #         plt.title('Average Number of Turns Distribution')
-    #         plt.legend(loc='upper right')
-    #         plt.grid(True)
-
-    #         plt.draw()
-    #         plt.pause(0.1)
-
-    #     # Display both subplots at the same time
-    #     plt.show()

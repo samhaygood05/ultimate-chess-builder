@@ -14,18 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from render_engines.abstract_render_engine import AbstractRenderEngine
-from render_engines.square_render_engine import SquareRenderEngine
-from render_engines.hex_render_engine import HexRenderEngine
-from rule_engines.timetravel_rule_engine import TimeTravelRuleEngine
-from boards.poly_board import PolyBoard
+from boards import PolyBoard
+from rule_engines import TimeTravelRuleEngine
+from render_engines import *
 import pygame
 from PIL import Image
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import numpy as np
-import colorsys
 
 class TimeTravelRenderEngine(AbstractRenderEngine):
     def __init__(self, screen_size, board: PolyBoard = None, rule_engine: TimeTravelRuleEngine = None, illegal_moves=False, render_on_init=False):
