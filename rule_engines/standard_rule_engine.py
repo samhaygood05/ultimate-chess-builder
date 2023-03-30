@@ -20,6 +20,7 @@ from boards import StandardBoard
 from rule_engines import AbstractRuleEngine
 from teams import Team
 from teams import TeamPresets as tp
+from moveset import Moveset, MovesetPresets as mp
 import random
 import copy
 
@@ -27,21 +28,21 @@ class StandardRuleEngine(AbstractRuleEngine):
     def __init__(self, rulesets: dict = None, teams = None, promotion_tiles = None, turn_order = None, multiteam_capture_ally = False, hexagonal=False):
         if hexagonal:
             self.rulesets = RuleSet.rule_dict(
-            RuleSet('pawn', 10, [(1, 1)], [(0, 1), (1, 0)], True, 2, False, 'queen'),
-            RuleSet('rook', 50, [(1,0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)], None, False, 0, True),
-            RuleSet('bishop', 30, [(2, 1), (1, 2), (-1, 1), (1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
-            RuleSet('knight', 30, [(1, 3), (2, 3), (3, 2), (3, 1), (2, -1), (1, -2), (-1, -3), (-2, -3), (-3, -2), (-3, -1), (-2, 1), (-1, 2)], None, False, 0, False),
-            RuleSet('queen', 90, [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, True),
-            RuleSet('king', 900, [(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], None, False, 0, False)
+            RuleSet('pawn', 10, [Moveset([(1, 1)], 1, 2, True, False), Moveset([(0, 1), (1, 0)], 1, 0, False, True)], 'queen'),
+            RuleSet('rook', 50, [Moveset([(1,0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)])]),
+            RuleSet('bishop', 30, [Moveset([(2, 1), (1, 2), (-1, 1), (1, -1), (-2, -1), (-1, -2)])]),
+            RuleSet('knight', 30, [Moveset([(1, 3), (2, 3), (3, 2), (3, 1), (2, -1), (1, -2), (-1, -3), (-2, -3), (-3, -2), (-3, -1), (-2, 1), (-1, 2)], 1)]),
+            RuleSet('queen', 90, [Moveset([(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)])]),
+            RuleSet('king', 900, [Moveset([(1, -1), (-1, 1), (1,0), (-1, 0), (0, 1), (0, -1), (2, 1), (1, 2), (1, 1), (-1, -1), (-2, -1), (-1, -2)], 1)])
         )
         else:
             self.rulesets = RuleSet.rule_dict(
-                RuleSet('pawn', 10, [(1, 0)], [(1, -1), (1, 1)], True, 2, False, 'queen'),
-                RuleSet('rook', 50, [(0, 1), (0, -1), (1, 0), (-1, 0)], None, False, 0, True),
-                RuleSet('bishop', 30, [(-1, -1), (-1, 1), (1, -1), (1, 1)], None, False, 0, True),
-                RuleSet('knight', 30, [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, False),
-                RuleSet('queen', 90, [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, True),
-                RuleSet('king', 900, [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)], None, False, 0, False)
+                RuleSet('pawn', 10, [mp.PAWN_MOVE, mp.PAWN_CAPTURE], 'queen'),
+                RuleSet('rook', 50, [mp.ROOK]),
+                RuleSet('bishop', 30, [mp.BISHOP]),
+                RuleSet('knight', 30, [mp.KNIGHT]),
+                RuleSet('queen', 90, [mp.QUEEN]),
+                RuleSet('king', 900, [mp.KING])
             )
         if rulesets != None:
             self.rulesets.update(rulesets)
@@ -79,7 +80,7 @@ class StandardRuleEngine(AbstractRuleEngine):
         if piece == None:
             return []
 
-        team = piece.team
+        team = piece.team.name
         if piece.has_moved and self.multiteam_capture_ally:
             allies = piece.get_allies_intersection()
             multiteam_capture_ally = True
@@ -87,90 +88,55 @@ class StandardRuleEngine(AbstractRuleEngine):
             allies = piece.get_allies_union()
             multiteam_capture_ally = False
 
-        if ruleset.team_overrides != None and team.name in ruleset.team_overrides:
-            ruleset_override = ruleset.team_overrides[team.name]
-            piece_name = ruleset_override.name
-            moveset = ruleset_override.moveset
-            captureset = ruleset_override.captureset
-            first_move = ruleset_override.first_move
-            first_move_boost = ruleset_override.first_move_boost
-            multimove = ruleset_override.multimove
-        else:
-            piece_name = ruleset.name
-            moveset = ruleset.moveset
-            captureset = ruleset.captureset
-            first_move = ruleset.first_move
-            first_move_boost = ruleset.first_move_boost
-            multimove = ruleset.multimove
-
-        if captureset == None:
-            captureset = moveset
+        piece_name = ruleset.name
 
         row, col = StandardBoard.tile_to_index(tile)
         legal_moves = []
-        direction = team.direction
-        side_direction = team.perpendicular
+        direction = self.teams[team].direction
+        side_direction = self.teams[team].perpendicular
 
         if piece.name == piece_name:
-            # Logic for Moveset
-            for delta_forward, delta_right in moveset:
-                delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
+            for moveset in ruleset.movesets:
+                moves, move_distance, first_move_boost, can_move_empty, can_capture = moveset.get_moves(board, tile, team, self.teams)
 
-                new_row = row + delta[0]
-                new_col = col + delta[1]
-                if multimove:
-                    while (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
+                # Logic for Moveset
+                for delta_forward, delta_right in moves:
+                    delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
+
+                    new_row = row + delta[0]
+                    new_col = col + delta[1]
+                    steps = 0
+                    while (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))) and (steps < move_distance or move_distance == -1):
                         target = board.board[new_row][new_col]
-                        if target == None:
+                        try:
+                            disallowed_pieces = target.disallowed_pieces
+                        except:
+                            disallowed_pieces = []
+                        try:
+                            if piece.name in disallowed_pieces:
+                                break
+                            elif target.piece == None and can_move_empty:
+                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
+                            else:
+                                if can_capture and not target.piece.is_allies(allies, not multiteam_capture_ally):
+                                    legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
+                                break
+                        except:
                             break
-                        if target.piece == None:
-                            legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
-                        else:
-                            break
+                        if first_move_boost > 1 and not piece.has_moved:
+                            for i in range(first_move_boost - 1):
+                                new_row += delta[0]
+                                new_col += delta[1]
+                                try:
+                                    target = board.board[new_row][new_col]
+                                    if target.piece == None:
+                                        legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
+                                except:
+                                    break
                         new_row += delta[0]
                         new_col += delta[1]
-                else:
-                    if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
-                        target = board.board[new_row][new_col]
-                        if target != None:
-                            if target.piece == None:
-                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
-                                if first_move and not piece.has_moved:
-                                    for i in range(first_move_boost - 1):
-                                        new_row += delta[0]
-                                        new_col += delta[1]
-                                        try:
-                                            target = board.board[new_row][new_col]
-                                            if target.piece == None:
-                                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
-                                        except:
-                                            break
-            # Logic for Capture Set
-            for delta_forward, delta_right in captureset:
-                delta = (delta_forward*direction[0] + delta_right*side_direction[0], delta_forward*direction[1] + delta_right*side_direction[1])
-
-                new_row = row + delta[0]
-                new_col = col + delta[1]
-                if multimove:
-                    while (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
-                        target = board.board[new_row][new_col]
-                        if target == None:
-                            break
-                        if target.piece == None:
-                            pass
-                        elif not target.piece.is_allies(allies, not multiteam_capture_ally):
-                            legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
-                            break
-                        else:
-                            break
-                        new_row += delta[0]
-                        new_col += delta[1]
-                else:
-                    if (new_row in range(len(board.board))) and (new_col in range(len(board.board[new_row]))):
-                        target = board.board[new_row][new_col]
-                        if target != None and target.piece != None:
-                            if not target.piece.is_allies(allies, not multiteam_capture_ally):
-                                legal_moves.append(StandardBoard.index_to_tile(new_row, new_col))
+                        steps += 1
+                    
         return legal_moves
 
 
@@ -194,16 +160,6 @@ class StandardRuleEngine(AbstractRuleEngine):
 
     def is_in_check(self, team, board: StandardBoard):
         return False
-        team_royal_tile = [tile for tile in board.royal_tiles if team in board.get_tile(tile).piece.get_team_names]
-        enemy_teams = [enemy for enemy in self.turn_order if enemy not in board.get_tile(team_royal_tile[0]).piece.get_allies_intersection]
-
-        for ruleset in self.rulesets:
-            if ruleset.team_overrides != None and set(enemy_teams) & set(ruleset.team_overrides.keys()):
-                inverse_captureset
-            else:
-                inverse_captureset = ruleset.reverse_captureset()
-                multimove = ruleset.multimove
-
 
     def all_legal_moves(self, team, board: StandardBoard, filter_capture=False):
         legal_moves = []
@@ -267,8 +223,6 @@ class StandardRuleEngine(AbstractRuleEngine):
                     scores[team] += promotion_points - start_tile_point
 
         return scores
-
-
 
     def play_move(self, board: StandardBoard, start_tile, end_tile, illegal_moves=False, check=True, simulated_move=False) -> StandardBoard:
         if not illegal_moves:

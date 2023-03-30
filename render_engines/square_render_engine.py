@@ -45,7 +45,7 @@ class SquareRenderEngine(AbstractRenderEngine):
         copy_engine = SquareRenderEngine(board=self.board.copy(), rule_engine=self.rule_engine.copy(), illegal_moves=self.illegal_moves)
         return copy_engine
 
-    def draw_board(self, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
+    def draw_board(self, imgs, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()
         glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
         rows = len(self.board.board)
@@ -181,6 +181,36 @@ class SquareRenderEngine(AbstractRenderEngine):
                 glVertex3fv(quad[3])
                 glEnd()
 
+                try:
+                    img = imgs[piece.texture]
+                    texture_data = np.asarray(img, dtype=np.uint8)
+                    texture_id = glGenTextures(1)
+                    glColor3fv((1.0, 1.0, 1.0))
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    glBindTexture(GL_TEXTURE_2D, texture_id)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
+                    glGenerateMipmap(GL_TEXTURE_2D)
+
+                    glEnable(GL_TEXTURE_2D)
+                    glBegin(GL_QUADS)
+                    glTexCoord2f(0.0, 0.0)
+                    glVertex3fv(quad[0])
+                    glTexCoord2f(1.0, 0.0)
+                    glVertex3fv(quad[1])
+                    glTexCoord2f(1.0, 1.0)
+                    glVertex3fv(quad[2])
+                    glTexCoord2f(0.0, 1.0)
+                    glVertex3fv(quad[3])
+                    glEnd()
+                    glDisable(GL_TEXTURE_2D)
+                except:
+                    pass
+
                 tile_name = StandardBoard.index_to_tile(row, column)
 
                 quads[tile_name] = quad
@@ -306,6 +336,16 @@ class SquareRenderEngine(AbstractRenderEngine):
         imgs['black'] = black_imgs
         imgs['white'] = white_imgs
 
+        self.tile_textures = dict()
+        try:
+            for texture in self.board.tile_textutes:
+                texture_file = f'tiles/{texture}.png'
+                with open(texture_file, "rb") as file:
+                    img = Image.open(file).convert('RGBA')
+                    self.tile_textures[texture] = img
+        except:
+            pass
+
         self.imgs = imgs
 
         if ai_teams == None:
@@ -384,7 +424,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                 highlight_tiles = []
 
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
-            quads = self.draw_board(self.zoom, highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
+            quads = self.draw_board(self.tile_textures, self.zoom, highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
             self.draw_pieces(self.imgs, self.zoom, self.camera_pos)
             pygame.display.flip()
 

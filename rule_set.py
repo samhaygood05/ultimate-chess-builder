@@ -14,33 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+from moveset import Moveset
+
 class RuleSet:
-    def __init__(self, name, points, moveset, captureset, first_move, first_move_boost, multimove, promotion=None, team_overrides=None):
+    def __init__(self, name, points, movesets: Moveset, promotion=None):
         self.name = name
         self.points = points
-        self.moveset = moveset
-        if captureset == None:
-            self.captureset = moveset
-        else:
-            self.captureset = captureset
-        self.first_move = first_move
-        self.first_move_boost = first_move_boost
-        self.multimove = multimove
+        self.movesets = movesets
         self.promotion = promotion
-        self.team_overrides = team_overrides
 
     def rule_dict(*rulesets):
         dictionary: dict = {}
         for ruleset in rulesets:
             dictionary.update({ruleset.name: ruleset})
         return dictionary
-
-    def reverse_captureset(self):
-        inverse_captureset = [tuple(-x for x in move) for move in self.captureset]
-        return inverse_captureset
-
-    def __str__(self):
-        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Promotion: {self.promotion}"
-
-    def __repr__(self):
-        return f"Name: {self.name}, Moveset: {self.moveset}, Captureset: {self.captureset}, First Move: {self.first_move} {self.first_move_boost}, Multimove: {self.multimove}, Promotion: {self.promotion}"

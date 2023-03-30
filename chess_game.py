@@ -6,11 +6,8 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     pygame.init()
-    renderer = DummyRenderEngine()
 
-    renderer.test_ais(['minmax_sib-8', 'minmax_lib-8'], 100, 50, True)
-    renderer.test_ais(['minmax_lib-8', 'minmax_sib-8'], 100, 50, True)
-    renderer.test_ais(['minmax_sib-8', 'minmax_sib_smart-8'], 100, 50, True)
-    renderer.test_ais(['minmax_sib_smart-8', 'minmax_sib-8'], 100, 50, True)
+    renderer = Variants.load('square/glass_cannon')
+    renderer.initialize((800, 600), {'black': 'minmax_sib_smart-8'})
 
     plt.show()

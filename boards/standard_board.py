@@ -57,6 +57,16 @@ class StandardBoard(AbstractBoard):
         else:
             self.royal_tiles = royal_tiles
 
+        try:
+            tile_textures = []
+            for row in board_state:
+                for tile in row:
+                    tile_textures.append(tile.texture)
+
+            self.tile_textutes = list(set(tile_textures))
+        except:
+            self.tile_textutes = None
+
     def copy(self):
         copy_board = StandardBoard(self.current_team, copy.deepcopy(self.board))
         return copy_board

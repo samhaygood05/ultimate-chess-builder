@@ -14,22 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from teams.team import TeamPresets as tp
-
 class Tile:
-    def __init__(self, piece=None, type=None, tint=(1.0, 1.0, 1.0)):
+    def __init__(self, piece=None, type=None, tint=(1.0, 1.0, 1.0), texture=None, disallowed_pieces=None):
         self.piece = piece
         self.type = type
         self.tint = tint
+        self.texture = texture
+        if disallowed_pieces == None:
+            self.disallowed_pieces = []
+        else:
+            self.disallowed_pieces = disallowed_pieces
 
     def transfer_piece(self, start_tile):
         new_end = Tile(start_tile.piece.moved(), self.type)
         new_start = Tile(None, start_tile.type)
         return new_end, new_start
-
-    def moved(self):
-        self.has_moved = True
-        return self
 
     def promote(self, promotion):
         self.piece.promote(promotion)

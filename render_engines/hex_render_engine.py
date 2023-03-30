@@ -27,7 +27,7 @@ import colorsys
 import math
 
 class HexRenderEngine(AbstractRenderEngine):
-    def __init__(self, screen_size, board: StandardBoard = None, rule_engine: StandardRuleEngine = None, illegal_moves=False, render_on_init=False):
+    def __init__(self, board: StandardBoard = None, rule_engine: StandardRuleEngine = None, illegal_moves=False):
         if board == None:
             self.board = StandardBoard(hexagonal=True)
         else:
@@ -41,8 +41,6 @@ class HexRenderEngine(AbstractRenderEngine):
 
         self.imgs = dict()
 
-        if render_on_init:
-            self.initialize(screen_size)
 
     def draw_board(self, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()

@@ -16,7 +16,6 @@ limitations under the License.
 
 from tile import Tile
 from piece import Piece
-from rule_set import RuleSet
 import pickle
 import copy
 
@@ -37,14 +36,6 @@ class Variants:
             preset = pickle.load(f)
         print(f'{name} Preset Loaded')
         return preset
-    
-    
-
-    MISC_FANTASY_RULESET = RuleSet.rule_dict(
-        RuleSet('zebra', 0, [(3, 2), (3, -2), (-3, 2), (-3, -2), (2, 3), (2, -3), (-2, 3), (-2, -3)], None, False, 0, False),
-        RuleSet('giraffe', 0, [(4, 1), (4, -1), (-4, 1), (-4, -1), (1, 4), (1, -4), (-1, 4), (-1, -4)], None, False, 0, False),
-        RuleSet('unicorn', 0, [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)], None, False, 0, True)
-    )
 
     def create_standard_board(team1, team2, distance=4):
         team1_area = [[Tile(Piece('rook', team1)), Tile(Piece('knight', team1)), Tile(Piece('bishop', team1)), Tile(Piece('queen', team1)), Tile(Piece('king', team1)), Tile(Piece('bishop', team1)), Tile(Piece('knight', team1)), Tile(Piece('rook', team1))],
