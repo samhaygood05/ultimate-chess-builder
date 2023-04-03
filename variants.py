@@ -39,16 +39,16 @@ class Variants:
 
     def create_standard_board(team1, team2, distance=4):
         team1_area = [[Tile(Piece('rook', team1)), Tile(Piece('knight', team1)), Tile(Piece('bishop', team1)), Tile(Piece('queen', team1)), Tile(Piece('king', team1)), Tile(Piece('bishop', team1)), Tile(Piece('knight', team1)), Tile(Piece('rook', team1))],
-                    [Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1)), Tile(Piece('pawn', team1))]]
+                    [Tile(Piece('pawn', team1)) for i in range(8)]]
         
-        team2_area = [[Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2)), Tile(Piece('pawn', team2))],
+        team2_area = [[Tile(Piece('pawn', team2)) for i in range(8)],
                     [Tile(Piece('rook', team2)), Tile(Piece('knight', team2)), Tile(Piece('bishop', team2)), Tile(Piece('queen', team2)), Tile(Piece('king', team2)), Tile(Piece('bishop', team2)), Tile(Piece('knight', team2)), Tile(Piece('rook', team2))]]
 
-        empty_area_row = [Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile(), Tile()]
+        empty_area_row = [Tile() for i in range(8)]
 
         empty_area = [copy.deepcopy(empty_area_row) for i in range(distance)]
         return team1_area + empty_area + team2_area
-    
+
     def create_empty_hex_board(size=6):
         board = []
         tile = [Tile()]
@@ -59,3 +59,25 @@ class Variants:
             board.append((2*size-i-2)*tile + (i+1)*empty)
 
         return board
+    
+    def create_empty_square_board(size=8):
+        board = []
+        for i in range(size):
+            row = []
+            for j in range(size):
+                row.append(Tile())
+            board.append(row)
+        return board
+
+    
+    def dynamove_rook(board, tile, team, teams):
+        return board.get_tile(tile).type == 'rook' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))
+    
+    def dynamove_knight(board, tile, team, teams):
+        return board.get_tile(tile).type == 'knight' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))
+    
+    def dynamove_bishop(board, tile, team, teams):
+        return board.get_tile(tile).type == 'bishop' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))
+    
+    def dynamove_queen(board, tile, team, teams):
+        return board.get_tile(tile).type == 'queen' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))

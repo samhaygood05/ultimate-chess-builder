@@ -152,7 +152,7 @@ class SquareRenderEngine(AbstractRenderEngine):
 
                 tile = StandardBoard.index_to_tile(row, column)
                 piece = self.board.get_tile(tile)
-                if piece is None:
+                if piece == None:
                     continue
 
                 tint = piece.tint
@@ -181,20 +181,12 @@ class SquareRenderEngine(AbstractRenderEngine):
                 glVertex3fv(quad[3])
                 glEnd()
 
-                try:
-                    img = imgs[piece.texture]
-                    texture_data = np.asarray(img, dtype=np.uint8)
-                    texture_id = glGenTextures(1)
+                if piece.texture != None: 
+                    texture_id = imgs[piece.texture]
                     glColor3fv((1.0, 1.0, 1.0))
                     glEnable(GL_BLEND);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glBindTexture(GL_TEXTURE_2D, texture_id)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-                    glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
-                    glGenerateMipmap(GL_TEXTURE_2D)
 
                     glEnable(GL_TEXTURE_2D)
                     glBegin(GL_QUADS)
@@ -208,8 +200,7 @@ class SquareRenderEngine(AbstractRenderEngine):
                     glVertex3fv(quad[3])
                     glEnd()
                     glDisable(GL_TEXTURE_2D)
-                except:
-                    pass
+                    glBindTexture(GL_TEXTURE_2D, 0)
 
                 tile_name = StandardBoard.index_to_tile(row, column)
 
@@ -251,11 +242,9 @@ class SquareRenderEngine(AbstractRenderEngine):
                     continue
                 else:
                     if piece.team.name == 'black':
-                        img = imgs['black'][piece.name]
-                        piece_data = np.asarray(img, dtype=np.uint8)
+                        texture_id = imgs['black'][piece.name]
                     else:
-                        img = imgs['white'][piece.name]
-                        piece_data = np.asarray(img, dtype=np.uint8)
+                        texture_id = imgs['white'][piece.name]
                     if piece.team.name in ['white', 'black']:
                         piece_color = (1.0, 1.0, 1.0)
                     else:
@@ -291,17 +280,10 @@ class SquareRenderEngine(AbstractRenderEngine):
                     else:
                         quadinary_piece_color = piece.quadinary_team.color
 
-                texture_id = glGenTextures(1)
                 glColor3fv(piece_color)
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                 glBindTexture(GL_TEXTURE_2D, texture_id)
-                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, piece_data)
-                glGenerateMipmap(GL_TEXTURE_2D)
 
                 glEnable(GL_TEXTURE_2D)
                 glBegin(GL_QUADS)
@@ -319,8 +301,10 @@ class SquareRenderEngine(AbstractRenderEngine):
                 glEnd()
                 glDisable(GL_TEXTURE_2D)
 
-    def initialize(self, screen_size, ai_teams=None, ai_turn_delay=15):
-        imgs = dict()
+                glBindTexture(GL_TEXTURE_2D, 0)
+
+    def store_imgs(self):
+        piece_textures = dict()
         black_imgs = dict()
         white_imgs = dict()
         for piece in self.rule_engine.rulesets.keys():
@@ -328,25 +312,44 @@ class SquareRenderEngine(AbstractRenderEngine):
             white_files = f"images/white/{piece}.png"
             with open(white_files, "rb") as file:
                 img = Image.open(file).convert('RGBA')
-                white_imgs[piece] = img
+                texture_id = self.generate_texture(img)
+                white_imgs[piece] = texture_id
             with open(black_files, "rb") as file:
                 img = Image.open(file).convert('RGBA')
-                black_imgs[piece] = img
+                texture_id = self.generate_texture(img)
+                black_imgs[piece] = texture_id
         
-        imgs['black'] = black_imgs
-        imgs['white'] = white_imgs
+        piece_textures['white'] = white_imgs
+        piece_textures['black'] = black_imgs
+
+        self.piece_textures = piece_textures
 
         self.tile_textures = dict()
-        try:
-            for texture in self.board.tile_textutes:
-                texture_file = f'tiles/{texture}.png'
-                with open(texture_file, "rb") as file:
-                    img = Image.open(file).convert('RGBA')
-                    self.tile_textures[texture] = img
-        except:
-            pass
+        
+        for texture in self.board.tile_textures:
+            texture_file = f'images/tiles/{texture}.png'
+            with open(texture_file, "rb") as file:
+                img = Image.open(file).convert('RGBA')
+                texture_id = self.generate_texture(img)
+                self.tile_textures[texture] = texture_id
+        print('pieces:', self.piece_textures)
+        print('tiles:', self.tile_textures)
 
-        self.imgs = imgs
+    def generate_texture(self, img):
+        texture_data = np.asarray(img, dtype=np.uint8)
+        texture_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, 0)
+
+        return texture_id
+
+    def initialize(self, screen_size, ai_teams=None, ai_turn_delay=15):
 
         if ai_teams == None:
             self.ai_teams = dict()
@@ -366,6 +369,9 @@ class SquareRenderEngine(AbstractRenderEngine):
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
         self.camera_pos = [-columns, -rows, 0.5]
+        
+        self.store_imgs()
+
         return self.main_loop()
 
     def main_loop(self):
@@ -425,7 +431,7 @@ class SquareRenderEngine(AbstractRenderEngine):
 
             glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
             quads = self.draw_board(self.tile_textures, self.zoom, highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
-            self.draw_pieces(self.imgs, self.zoom, self.camera_pos)
+            self.draw_pieces(self.piece_textures, self.zoom, self.camera_pos)
             pygame.display.flip()
 
             if (not self.rule_engine.all_legal_moves(self.board.current_team, self.board) and len(self.rule_engine.teams) > 2) or \

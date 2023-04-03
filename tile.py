@@ -19,7 +19,10 @@ class Tile:
         self.piece = piece
         self.type = type
         self.tint = tint
-        self.texture = texture
+        if texture == None:
+            self.texture = type
+        else:
+            self.texture = texture
         if disallowed_pieces == None:
             self.disallowed_pieces = []
         else:
