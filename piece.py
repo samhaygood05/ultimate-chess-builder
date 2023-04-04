@@ -17,9 +17,10 @@ limitations under the License.
 from teams.team import TeamPresets as tp
 
 class Piece:
-    def __init__(self, name, team, secondary_team=None, trinary_team=None, quadinary_team=None, is_royal=None, has_moved=False):
+    def __init__(self, name, team, facing, is_royal=None, has_moved=False, secondary_team=None, trinary_team=None, quadinary_team=None):
         self.name = name
         self.team = team
+        self.facing = facing
 
         self.has_moved = has_moved
 
@@ -41,6 +42,8 @@ class Piece:
         else:
             self.is_royal = is_royal
 
+        
+
     def moved(self):
         self.has_moved = True
         return self
@@ -49,11 +52,19 @@ class Piece:
         self.name = promotion
         return self
     
-    def get_allies_intersection(self):
-        return list(set(self.team.allies) & set(self.secondary_team.allies) & set(self.trinary_team.allies) & set(self.quadinary_team.allies))
+    def get_allies_intersection(self, teams):
+        team = teams[self.team]
+        secondary_team = teams[self.secondary_team]
+        trinary_team = teams[self.trinary_team]
+        quadinary_team = teams[self.quadinary_team]
+        return list(set(team.allies) & set(secondary_team.allies) & set(trinary_team.allies) & set(quadinary_team.allies))
 
-    def get_allies_union(self):
-        return list(set(self.team.allies) | set(self.secondary_team.allies) | set(self.trinary_team.allies) | set(self.quadinary_team.allies))
+    def get_allies_union(self, teams):
+        team = teams[self.team]
+        secondary_team = teams[self.secondary_team]
+        trinary_team = teams[self.trinary_team]
+        quadinary_team = teams[self.quadinary_team]
+        return list(set(team.allies) | set(secondary_team.allies) | set(trinary_team.allies) | set(quadinary_team.allies))
 
     def is_allies(self, allies, inclusive):
         if inclusive:
@@ -62,4 +73,4 @@ class Piece:
             return not list(set(self.get_team_names()) ^ set(allies))
 
     def get_team_names(self):
-        return list(set([self.team.name, self.secondary_team.name, self.trinary_team.name, self.quadinary_team.name]))
+        return list(set([self.team, self.secondary_team, self.trinary_team, self.quadinary_team]))
