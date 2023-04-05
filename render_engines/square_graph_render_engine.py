@@ -25,6 +25,7 @@ from OpenGL.GLU import *
 import numpy as np
 import colorsys
 import copy
+import math
 
 class SquareGraphRenderEngine(AbstractRenderEngine):
     def __init__(self, board: GraphBoard = None, rule_engine: GraphRuleEngine = None, illegal_moves=False):
@@ -59,7 +60,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         elif current_team == 'black':
             board_color = (0.3, 0.3, 0.3)
         else:
-            board_color = colorsys.hsv_to_rgb(colorsys.rgb_to_hsv(*current_team.color)[0], 0.5, 0.7)
+            board_color = colorsys.hsv_to_rgb(colorsys.rgb_to_hsv(*self.rule_engine.teams[current_team].color)[0], 0.5, 0.7)
 
         highlight_color=(1.0, 1.0, 0.0)
         selected_color=(1.0, 0.0, 0.0)
@@ -77,15 +78,17 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         square_size = 1 / 10
         outer_border_width = 0.3 * square_size # set the width of the border
         inner_border_width = 0.05 * square_size # set the width of the border
-        board_width = (self.columns + 1) * square_size
-        board_height = (self.rows + 1) * square_size
+        board_width = [col * square_size for col in self.column_minmax]
+        board_width = [board_width[0], board_width[1] + square_size]
+        board_height = [row * square_size for row in self.row_minmax]
+        board_height = [board_height[0], board_height[1] + square_size]
         quads = dict()
 
         outer_border = (
-            (x - outer_border_width - inner_border_width, y - outer_border_width - inner_border_width, z),
-            (x + board_width + outer_border_width + inner_border_width, y - outer_border_width - inner_border_width, z),
-            (x + board_width + outer_border_width + inner_border_width, y + board_height + outer_border_width + inner_border_width, z),
-            (x - outer_border_width - inner_border_width, y + board_height + outer_border_width + inner_border_width, z)
+            (x + board_width[0] - outer_border_width - inner_border_width, y + board_height[0] - outer_border_width - inner_border_width, z),
+            (x + board_width[1] + outer_border_width + inner_border_width, y + board_height[0] - outer_border_width - inner_border_width, z),
+            (x + board_width[1] + outer_border_width + inner_border_width, y + board_height[1] + outer_border_width + inner_border_width, z),
+            (x + board_width[0] - outer_border_width - inner_border_width, y + board_height[1] + outer_border_width + inner_border_width, z)
         )
 
         on_screen = SquareGraphRenderEngine.is_on_screen(outer_border, prjMat, zoom)
@@ -100,10 +103,10 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
             glEnd()
 
         team_border = (
-            (x - outer_border_width, y - outer_border_width, z),
-            (x + board_width + outer_border_width, y - outer_border_width, z),
-            (x + board_width + outer_border_width, y + board_height + outer_border_width, z),
-            (x - outer_border_width, y + board_height + outer_border_width, z)
+            (x + board_width[0] - outer_border_width, y + board_height[0] - outer_border_width, z),
+            (x + board_width[1] + outer_border_width, y + board_height[0] - outer_border_width, z),
+            (x + board_width[1] + outer_border_width, y + board_height[1] + outer_border_width, z),
+            (x + board_width[0] - outer_border_width, y + board_height[1] + outer_border_width, z)
         )
 
         on_screen = SquareGraphRenderEngine.is_on_screen(team_border, prjMat, zoom)
@@ -118,10 +121,10 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
             glEnd()
 
         inner_border = (
-            (x - inner_border_width, y - inner_border_width, z),
-            (x + board_width + inner_border_width, y - inner_border_width, z),
-            (x + board_width + inner_border_width, y + board_height + inner_border_width, z),
-            (x - inner_border_width, y + board_height + inner_border_width, z)
+            (x + board_width[0] - inner_border_width, y + board_height[0] - inner_border_width, z),
+            (x + board_width[1] + inner_border_width, y + board_height[0] - inner_border_width, z),
+            (x + board_width[1] + inner_border_width, y + board_height[1] + inner_border_width, z),
+            (x + board_width[0] - inner_border_width, y + board_height[1] + inner_border_width, z)
         )
 
         on_screen = SquareGraphRenderEngine.is_on_screen(inner_border, prjMat, zoom)
@@ -136,36 +139,41 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
             glEnd()
 
         # Draw the checkerboard
-        for row, col in self.board.nodes.keys():
+        for position, node in self.board.nodes.items():
+            if node.render_position == None:
+                row, col = position
+            else:
+                row, col = node.render_position
+            if node.render_rotation == None:
+                rotation = 0
+            else:
+                rotation = node.render_rotation
 
-            x_pos = x + (col) * square_size
-            y_pos = y + (self.rows - row) * square_size
+            code_position = position
+
+            x_pos = x + (col + 1/2) * square_size
+            y_pos = y + (self.rows - row + 1/2) * square_size
             z_pos = z
-            quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
+            quad_centered = ((-square_size / 2, -square_size / 2, 0), (square_size / 2, -square_size / 2, 0), (square_size / 2, square_size / 2, 0), (-square_size / 2, square_size / 2, 0))
+            rotated_quad = SquareGraphRenderEngine.rotate_quad(quad_centered, rotation)
+            quad = tuple((x_pos + point[0], y_pos + point[1], z_pos + point[2]) for point in rotated_quad)
             on_screen = SquareGraphRenderEngine.is_on_screen(quad, prjMat, zoom)
             if not on_screen:
                 continue
 
-            tile = self.board.get_node_tile((row, col))
+            tile = node.tile
             if tile == None:
                 continue
 
-            tint = tile.tint
+            color = tile.tint
 
-            if (row + col) % 2 == 0:
-                color = (0.9, 0.9, 0.9) # light gray
-            else:
-                color = (0.7, 0.7, 0.7) # dark gray
-            
-            color = (color[0]*tint[0], color[1]*tint[1], color[2]*tint[2])
-
-            if (row, col) in highlight_tiles and (row, col) in tile_hover:
+            if code_position in highlight_tiles and (row, col) in tile_hover:
                 color = ((color[0] + hover_highlight_color[0])/2, (color[1] + hover_highlight_color[1])/2, (color[2] + hover_highlight_color[2])/2)
-            elif (row, col) in highlight_tiles:
+            elif code_position in highlight_tiles:
                 color = ((color[0] + highlight_color[0])/2, (color[1] + highlight_color[1])/2, (color[2] + highlight_color[2])/2)
-            elif (row, col) in tile_selected:
+            elif code_position in tile_selected:
                 color = ((color[0] + selected_color[0])/2, (color[1] + selected_color[1])/2, (color[2] + selected_color[2])/2)
-            elif (row, col) in tile_hover:
+            elif code_position in tile_hover:
                 color = ((color[0] + hover_color[0])/2, (color[1] + hover_color[1])/2, (color[2] + hover_color[2])/2)
 
             glBegin(GL_QUADS)
@@ -197,7 +205,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
                 glDisable(GL_TEXTURE_2D)
                 glBindTexture(GL_TEXTURE_2D, 0)
 
-            quads[(row, col)] = quad
+            quads[code_position] = quad
         
         return quads
 
@@ -207,8 +215,16 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         x, y, z = pos
 
         square_size = 1 / 10
-        for row, col in self.board.nodes.keys():
-                
+        for position, node in self.board.nodes.items():
+            if node.render_position == None:
+                row, col = position
+            else:
+                row, col = node.render_position
+            if node.render_rotation == None:
+                rotation = 0
+            else:
+                rotation = node.render_rotation
+
             x_pos = x + (col) * square_size
             y_pos = y + (self.rows - row) * square_size
             z_pos = z - 0.01
@@ -221,10 +237,10 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
             secondary_piece_color = (1.0, 1.0, 1.0)
             trinary_piece_color = (1.0, 1.0, 1.0)
             quadinary_piece_color = (1.0, 1.0, 1.0)
-            piece = self.board.get_node_piece((row, col))
+            piece = node.tile.piece
             if piece == None:
                 continue
-            elif piece.name == 'empty':
+            elif piece.name == 'empty' or piece.name == None:
                 continue
             else:
                 if piece.team == 'black':
@@ -234,7 +250,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
                 if piece.team in ['white', 'black']:
                     piece_color = (1.0, 1.0, 1.0)
                 else:
-                    piece_color = piece.team.color
+                    piece_color = self.rule_engine.teams[piece.team].color
 
                 if piece.secondary_team == 'black':
                     if piece.team == 'black':
@@ -244,7 +260,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
                 elif piece.secondary_team == 'white':
                     secondary_piece_color = (1.0, 1.0, 1.0)
                 else:
-                    secondary_piece_color = piece.secondary_team.color
+                    secondary_piece_color = self.rule_engine.teams[piece.secondary_team].color
 
                 if piece.trinary_team == 'black':
                     if piece.team == 'black':
@@ -254,7 +270,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
                 elif piece.trinary_team == 'white':
                     trinary_piece_color = (1.0, 1.0, 1.0)
                 else:
-                    trinary_piece_color = piece.trinary_team.color
+                    trinary_piece_color = self.rule_engine.teams[piece.trinary_team].color
 
                 if piece.quadinary_team == 'black':
                     if piece.team == 'black':
@@ -264,7 +280,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
                 elif piece.secondary_team == 'white':
                     quadinary_piece_color = (1.0, 1.0, 1.0)
                 else:
-                    quadinary_piece_color = piece.quadinary_team.color
+                    quadinary_piece_color = self.rule_engine.teams[piece.quadinary_team].color
 
             glColor3fv(piece_color)
             glEnable(GL_BLEND);
@@ -355,7 +371,12 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         row_max = None
         column_min = None
         column_max = None
-        for node_row, node_col in self.board.nodes.keys():
+        for node_position, node in self.board.nodes.items():
+            if node.render_position == None:
+                node_row, node_col = node_position
+            else:
+                node_row, node_col = node.render_position
+
             if row_min == None:
                 row_min = node_row
             else:
@@ -376,17 +397,15 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         self.row_minmax = (row_min, row_max)
         self.column_minmax = (column_min, column_max)
 
+        self.center = ((row_max + row_min) / 2, (column_max + column_min) / 2)
+
 
         self.rows = row_max - row_min
         self.columns = column_max - column_min
 
-        center_x = sum(self.column_minmax) / 2
-        center_y = sum(self.row_minmax) / 2
-        self.center = (center_x, center_y)
-
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
-        self.camera_pos = [-(self.columns + 0.5) / 20, -(self.rows + 0.5) / 20, 0.5]
+        self.camera_pos = [-(self.center[1]) / 10, -(self.center[0]) / 10, 0.5]
         
         self.store_imgs()
 
@@ -441,9 +460,9 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
                 self.zoom += self.zoom / 20
 
             if selected_tile != '':
-                highlight_tiles = self.rule_engine.get_legal_moves(selected_tile, self.board)
+                highlight_tiles = [move[0] for move in self.rule_engine.get_legal_moves(selected_tile, self.board)]
             elif hover_tile != '':
-                highlight_tiles = self.rule_engine.get_legal_moves(hover_tile, self.board)
+                highlight_tiles = [move[0] for move in self.rule_engine.get_legal_moves(hover_tile, self.board)]
             else: 
                 highlight_tiles = []
 

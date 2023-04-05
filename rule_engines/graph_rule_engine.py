@@ -90,18 +90,23 @@ class GraphRuleEngine:
                             except:
                                 disallowed_pieces = []
 
-                            if (new_position, last_movement) in legal_moves:
+                            if (new_position, new_facing, last_movement) in legal_moves:
                                 break
                             if piece.name in disallowed_pieces:
                                 break
                             if target.piece == None and can_move_empty:
-                                legal_moves.append((new_position, last_movement))
+                                legal_moves.append((new_position, new_facing, last_movement))
                             elif target.piece != None:
                                 if can_capture and not target.piece.is_allies(allies, not multiteam_capture_ally):
-                                    legal_moves.append((new_position, last_movement))
+                                    legal_moves.append((new_position, new_facing, last_movement))
                                 break
+        
+        if legal_moves:
+            pure_legal_moves = list(set([tuple(move[:2]) for move in legal_moves if None not in move]))
+        else:
+            pure_legal_moves = []
 
-        return [move[0] for move in legal_moves]
+        return pure_legal_moves
     
     def get_legal_moves(self, position, board: GraphBoard, check=False):
         tile = board.get_node_tile(position)
@@ -110,7 +115,9 @@ class GraphRuleEngine:
         if tile == None or tile.piece == None:
             return legal_moves
         
-        legal_moves.extend(self.add_ruleset(position, board, self.rulesets[tile.piece.name]))
+        name = tile.piece.name
+        if name in self.rulesets.keys():
+            legal_moves.extend(self.add_ruleset(position, board, self.rulesets[name]))
 
         return legal_moves
     
@@ -125,15 +132,19 @@ class GraphRuleEngine:
     def play_move(self, board: GraphBoard, start_pos, end_pos, illegal_moves=False, check=True) -> GraphBoard:
         if not illegal_moves:
             legal_moves = self.get_legal_moves(start_pos, board, check)
-            if end_pos not in legal_moves:
+            if end_pos not in [move[0] for move in legal_moves]:
                 print("Illegal Move")
                 return board
+            new_facing = legal_moves[[move[0] for move in legal_moves].index(end_pos)][1]
+        else:
+            new_facing = None
         
         if self.turn_order[board.current_team_index] not in board.get_node_piece(start_pos).get_team_names():
             print("Not your turn")
             return board
         
         piece = board.get_node_piece(start_pos)
+        piece_name = piece.name
 
         royal_tiles = board.royal_tiles
         if piece.is_royal:
@@ -142,14 +153,19 @@ class GraphRuleEngine:
                 royal_tiles[team].append(end_pos)
 
         new_board = board.copy()
-        new_board.set_node_piece(end_pos, piece)
+        new_board.set_node_piece(end_pos, piece.moved())
         new_board.set_node_piece(start_pos, None)
 
-        promotion = self.rulesets[piece.name].promotion
+        new_board.get_node_piece(end_pos).name = piece_name
 
-        for team in piece.get_team_names():
-            if end_pos in self.promotion_tiles[team]:
-                new_board.set_node_piece(end_pos, piece.promote(promotion))
+        promotion = self.rulesets[piece.name].promotion
+        if new_facing != None:
+            new_board.get_node_piece(end_pos).facing = new_facing
+
+        if promotion != None:
+            for team in piece.get_team_names():
+                if end_pos in self.promotion_tiles[team]:
+                    new_board.set_node_piece(end_pos, piece.promote(promotion))
 
         new_board.current_team_index = (new_board.current_team_index + 1) % len(self.turn_order)
 

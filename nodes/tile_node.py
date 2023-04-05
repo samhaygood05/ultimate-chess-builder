@@ -17,13 +17,15 @@ limitations under the License.
 from tile import Tile
 
 class TileNode:
-    def __init__(self, position, tile: Tile=None, adjacency_types=None):
+    def __init__(self, position, tile: Tile=None, adjacency_types=None, render_position=None, render_rotation=None):
         self.position = position
         self.tile = tile
         if adjacency_types == None:
             self.adjacencies = {'edge': dict(), 'vertex': dict()}
         else:
             self.adjacencies = {adjacency : dict() for adjacency in adjacency_types}
+        self.render_position = render_position
+        self.render_rotation = render_rotation
 
     def set_piece(self, piece):
         self.tile.piece = piece

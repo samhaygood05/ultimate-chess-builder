@@ -74,3 +74,6 @@ class Piece:
 
     def get_team_names(self):
         return list(set([self.team, self.secondary_team, self.trinary_team, self.quadinary_team]))
+    
+    def __str__(self) -> str:
+        return f'{self.team} {self.name} -> {self.facing}'

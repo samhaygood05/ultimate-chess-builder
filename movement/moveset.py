@@ -51,14 +51,24 @@ class MovesetPresets:
     PAWN_CAPTURE = Moveset([Move(('fl', 'vertex')), Move(('fr', 'vertex'))], 1, False, True)
     ROOK = Moveset([Move(('f', 'edge')), Move(('b', 'edge')), Move(('l', 'edge')), Move(('r', 'edge'))])
     KNIGHT = Moveset([
-        Move(('f', 'edge'), ('fl', 'vertex')),
-        Move(('f', 'edge'), ('fr', 'vertex')),
-        Move(('b', 'edge'), ('fl', 'vertex')),
-        Move(('b', 'edge'), ('fr', 'vertex')),
-        Move(('l', 'edge'), ('fl', 'vertex')),
-        Move(('l', 'edge'), ('fr', 'vertex')),
-        Move(('r', 'edge'), ('fl', 'vertex')),
-        Move(('r', 'edge'), ('fr', 'vertex'))
+        Move(('f', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('f', 'edge'), ('f', 'edge'), ('r', 'edge')),
+        Move(('b', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('b', 'edge'), ('f', 'edge'), ('r', 'edge')),
+        Move(('l', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('l', 'edge'), ('f', 'edge'), ('r', 'edge')),
+        Move(('r', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('r', 'edge'), ('f', 'edge'), ('r', 'edge')),
+
+        Move(('f', 'edge'), ('l', 'edge'), ('f', 'edge')),
+        Move(('f', 'edge'), ('r', 'edge'), ('f', 'edge')),
+        Move(('b', 'edge'), ('l', 'edge'), ('f', 'edge')),
+        Move(('b', 'edge'), ('r', 'edge'), ('f', 'edge')),
+        Move(('l', 'edge'), ('l', 'edge'), ('f', 'edge')),
+        Move(('l', 'edge'), ('r', 'edge'), ('f', 'edge')),
+        Move(('r', 'edge'), ('l', 'edge'), ('f', 'edge')),
+        Move(('r', 'edge'), ('r', 'edge'), ('f', 'edge')),
+
         ], 1)
     BISHOP = Moveset([Move(('fl', 'vertex')), Move(('fr', 'vertex')), Move(('bl', 'vertex')), Move(('br', 'vertex'))])
     QUEEN = Moveset([
@@ -68,14 +78,14 @@ class MovesetPresets:
         Move(('f', 'edge')), Move(('b', 'edge')), Move(('l', 'edge')), Move(('r', 'edge')), 
         Move(('fl', 'vertex')), Move(('fr', 'vertex')), Move(('bl', 'vertex')), Move(('br', 'vertex'))], 1)
     LONG_KNIGHT = Moveset([
-        Move(('f', 'edge'), ('f', 'edge'), ('fl', 'vertex')),
-        Move(('f', 'edge'), ('f', 'edge'), ('fr', 'vertex')),
-        Move(('b', 'edge'), ('f', 'edge'), ('fl', 'vertex')),
-        Move(('b', 'edge'), ('f', 'edge'), ('fr', 'vertex')),
-        Move(('l', 'edge'), ('f', 'edge'), ('fl', 'vertex')),
-        Move(('l', 'edge'), ('f', 'edge'), ('fl', 'vertex')),
-        Move(('r', 'edge'), ('f', 'edge'), ('fr', 'vertex')),
-        Move(('r', 'edge'), ('f', 'edge'), ('fr', 'vertex'))
+        Move(('f', 'edge'), ('f', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('f', 'edge'), ('f', 'edge'), ('f', 'edge'), ('r', 'edge')),
+        Move(('b', 'edge'), ('f', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('b', 'edge'), ('f', 'edge'), ('f', 'edge'), ('r', 'edge')),
+        Move(('l', 'edge'), ('f', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('l', 'edge'), ('f', 'edge'), ('f', 'edge'), ('r', 'edge')),
+        Move(('r', 'edge'), ('f', 'edge'), ('f', 'edge'), ('l', 'edge')),
+        Move(('r', 'edge'), ('f', 'edge'), ('f', 'edge'), ('r', 'edge'))
         ], 1)
     
     WARP = Moveset([Move(('warp', 'warp'))], 1, True, False)

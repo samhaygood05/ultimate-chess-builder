@@ -15,6 +15,7 @@ limitations under the License.
 '''
 
 from abc import ABC, abstractmethod
+import math
 
 class AbstractRenderEngine(ABC):
     @abstractmethod
@@ -44,6 +45,12 @@ class AbstractRenderEngine(ABC):
         ndc = [(2.0 * mpos[0]/display[0] - 1.0)*zoom, (2.0 * mpos[1]/display[0] - display[1]/display[0])*zoom]
         return AbstractRenderEngine.point_inside_polygon(ndc, projected_polygon)
     
+    def rotate_quad(quad, angle):
+        angle_rad = angle * math.pi / 180
+        cos = math.cos(angle_rad)
+        sin = math.sin(angle_rad)
+        return [(cos * vertex[0] - sin * vertex[1], sin * vertex[0] + cos * vertex[1], vertex[2]) for vertex in quad]
+
     def point_inside_polygon(point, polygon):
             n = len(polygon)
             inside = False

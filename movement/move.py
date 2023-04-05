@@ -20,6 +20,7 @@ class Move:
         self.end_direction = end_direction
 
     def get_end_position(self, board, start_position, start_direction):
+        end_direction = self.end_direction
         current_position = start_position
         current_direction = start_direction
         for relative_direction, type in self.sequence:
@@ -30,12 +31,16 @@ class Move:
             adjacencies = board.get_node_adjacencies(current_position, type)
             try:
                 new_position = adjacencies[new_direction][1]
+                change_direction = adjacencies[new_direction][2]
+                if change_direction != None and change_direction != 'f':
+                    new_direction = board.get_direction_from_relative(new_direction, change_direction)
+                    end_direction = change_direction
             except KeyError:
-                return None, None
+                return None, None, None
             current_position = new_position
             current_direction = new_direction
         
-        return current_position, board.get_direction_from_relative(start_direction, self.end_direction), new_direction
+        return current_position, board.get_direction_from_relative(start_direction, end_direction), new_direction
 
     def __str__(self) -> str:
         return " -> ".join([f"{direction} ({type})" for direction, type in self.sequence])

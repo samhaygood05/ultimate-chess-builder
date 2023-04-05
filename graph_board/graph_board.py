@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from typing import List, Dict, Any
 from tile import Tile
 from piece import Piece
+import math
 
 
 class GraphBoard:
@@ -43,8 +44,11 @@ class GraphBoard:
     def get_direction_from_relative(self, forward_direction, relative_direction):
         return self.directions.get_direction_from_relative(forward_direction, relative_direction)
 
-    def add_node(self, position, tile: Tile=None):
-        node = TileNode(position, tile)
+    def add_node(self, position, tile: Tile=None, tint=None, render_position=None, render_rotation=None):
+        if tint == None:
+            tint = (0.9, 0.9, 0.9) if (position[0] + position[1]) % 2 == 0 else (0.7, 0.7, 0.7)
+        tile.tint = tint
+        node = TileNode(position, tile, render_position=render_position, render_rotation=render_rotation)
         self.nodes[position] = node
         if tile != None and tile.piece != None and tile.piece.is_royal:
             for team in tile.piece.get_team_names():
@@ -55,13 +59,35 @@ class GraphBoard:
         if tile != None and tile.texture not in self.tile_textures:
             self.tile_textures.append(tile.texture)
 
+    def combine_graphs(self, other_graph):
+        # Combine the nodes from the other graph into this graph
+        self.nodes.update(other_graph.nodes)
+        
+        # Combine adjacency graphs of each adjacency type from the other graph into this graph
+        for adjacency_type, other_adjacency_graph in other_graph.adjacency_graphs.items():
+            if adjacency_type not in self.adjacency_graphs:
+                self.adjacency_graphs[adjacency_type] = dict()
+            
+            self.adjacency_graphs[adjacency_type].update(other_adjacency_graph)
 
-    def add_adjacency(self, position1, position2, adjacency_type, direction):
+        # Combine royal tiles from the other graph into this graph
+        for team, other_royal_tiles in other_graph.royal_tiles.items():
+            if team not in self.royal_tiles:
+                self.royal_tiles[team] = []
+            
+            self.royal_tiles[team].extend(other_royal_tiles)
+
+        # Combine tile textures from the other graph into this graph
+        for texture in other_graph.tile_textures:
+            if texture not in self.tile_textures:
+                self.tile_textures.append(texture)
+
+    def add_adjacency(self, position1, position2, adjacency_type, direction, change_direction_to='f'):
         if adjacency_type not in self.adjacency_graphs.keys():
             self.adjacency_graphs[adjacency_type] = dict()
         if adjacency_type not in self.nodes[position1].adjacencies.keys():
             self.nodes[position1].adjacencies[adjacency_type] = dict()
-        self.nodes[position1].adjacencies[adjacency_type][direction] = (self.nodes[position2], position2)
+        self.nodes[position1].adjacencies[adjacency_type][direction] = (self.nodes[position2], position2, change_direction_to)
         self.adjacency_graphs[adjacency_type][(position1, position2)] = (self.nodes[position1], self.nodes[position2])
 
     def remove_adjacency(self, position1, position2, adjacency_type, direction):
@@ -81,7 +107,7 @@ class GraphBoard:
     def copy(self):
         new_board = GraphBoard(self.adjacency_graphs.keys(), self.directions, self.current_team_index)
         for position, node in self.nodes.items():
-            new_board.add_node(position, node.tile)
+            new_board.add_node(position, node.tile, node.tile.tint, node.render_position, node.render_rotation)
             new_board.get_node(position).adjacencies = node.adjacencies
 
         new_board.adjacency_graphs = self.adjacency_graphs
@@ -90,7 +116,10 @@ class GraphBoard:
     def get_node_tile(self, position) -> Tile:
         return self.nodes[position].tile
     
-    def set_node_tile(self, position, tile):
+    def set_node_tile(self, position, tile, tint=None):
+        if tint == None:
+            tint = (0.9, 0.9, 0.9) if (position[0] + position[1]) % 2 == 0 else (0.7, 0.7, 0.7)
+        tile.tint = tint
         self.nodes[position].tile = tile
 
     def get_node_piece(self, position) -> Piece:
@@ -105,6 +134,10 @@ class GraphBoard:
         if self.nodes[position].tile == None:
             return None
         return self.nodes[position].tile.type
+    
+    def set_node_rendering(self, position, render_position, render_rotation):
+        self.nodes[position].render_position = render_position
+        self.nodes[position].render_rotation = render_rotation
 
     def __str__(self) -> str:
         return f'GraphBoard({self.nodes}, {self.edges})'
@@ -119,7 +152,7 @@ class GraphBoard:
             if adjacency not in node.adjacencies.keys():
                 continue
             edge_graph.add_node(position)
-            for neightbor_direction, neighbor_position in node.adjacencies[adjacency].values():
+            for neightbor_direction, neighbor_position, change_direction in node.adjacencies[adjacency].values():
                 edge_graph.add_edge(position, neighbor_position)
 
         edge_pos = nx.kamada_kawai_layout(edge_graph)
@@ -132,50 +165,97 @@ class GraphBoard:
 
 class GraphPresets:
 
-    def create_empty_rectangular_grid(i, j) -> GraphBoard:
+    def create_empty_rectangular_grid(i, j, br=(0,0), br_rendered=None, rotation=0) -> GraphBoard:
+        if br_rendered == None:
+            br_rendered = br
         board = GraphBoard()
+
+        def shift(position_x, position_y):
+            position = (position_x, position_y)
+            if shift == (0, 0):
+                return position
+            return (position[0] + br[0], position[1] + br[1])
+        
+        def rendered_shift(position_x, position_y):
+            position = (position_x, position_y)
+            if shift == (0, 0):
+                return position
+            return (position[0] + br_rendered[0], position[1] + br_rendered[1])
+
+        def rotate(position):
+            if rotation == 0:
+                return position
+            rotation_rad = rotation * math.pi / 180
+            return (position[0] * math.cos(rotation_rad) - position[1] * math.sin(rotation_rad), position[0] * math.sin(rotation_rad) + position[1] * math.cos(rotation_rad))
+
+        def tf(position_x, position_y):
+            transformed = rendered_shift(*rotate((position_x, position_y)))
+            return transformed
 
         # Add nodes for each position on the ixj grid
         for row in range(i):
             for col in range(j):
-                position = (row, col)
-                board.add_node(position, Tile())
+                position = shift(row, col)
+                render_position = tf(row, col)
+                board.add_node(position, Tile(), render_position=render_position, render_rotation=rotation)
 
         # Add edges between neighboring nodes
         for row in range(i):
             for col in range(j):
-                position = (row, col)
+                position = shift(row, col)
 
                 # Neighboring positions
-                north = (row + 1, col)
-                northeast = (row + 1, col - 1)
-                east = (row, col - 1)
-                southeast = (row - 1, col - 1)
-                south = (row - 1, col)
-                southwest = (row - 1, col + 1)
-                west = (row, col + 1)
-                northwest = (row + 1, col + 1)
+                north = shift(row + 1, col)
+                northeast = shift(row + 1, col - 1)
+                east = shift(row, col - 1)
+                southeast = shift(row - 1, col - 1)
+                south = shift(row - 1, col)
+                southwest = shift(row - 1, col + 1)
+                west = shift(row, col + 1)
+                northwest = shift(row + 1, col + 1)
 
                 # Add edges if neighbors are within the grid
-                if north[0] in range(i):
+                if north[0] in range(br[0], br[0]+i):
                     board.add_adjacency(position, north, 'edge', 'n')
-                if east[1] in range(j):
+                if east[1] in range(br[1], br[1]+j):
                     board.add_adjacency(position, east, 'edge', 'e')
-                if south[0] in range(i):
+                if south[0] in range(br[0], br[0]+i):
                     board.add_adjacency(position, south, 'edge', 's')
-                if west[1] in range(j):
+                if west[1] in range(br[1], br[1]+j):
                     board.add_adjacency(position, west, 'edge', 'w')
-                if northeast[0] in range(i) and northeast[1] in range(j):
+                if northeast[0] in range(br[0], br[0]+i) and northeast[1] in range(br[1], br[1]+j):
                     board.add_adjacency(position, northeast, 'vertex', 'ne')
-                if southeast[0] in range(i) and southeast[1] in range(j):
+                if southeast[0] in range(br[0], br[0]+i) and southeast[1] in range(br[1], br[1]+j):
                     board.add_adjacency(position, southeast, 'vertex', 'se')
-                if southwest[0] in range(i) and southwest[1] in range(j):
+                if southwest[0] in range(br[0], br[0]+i) and southwest[1] in range(br[1], br[1]+j):
                     board.add_adjacency(position, southwest, 'vertex', 'sw')
-                if northwest[0] in range(i) and northwest[1] in range(j):
+                if northwest[0] in range(br[0], br[0]+i) and northwest[1] in range(br[1], br[1]+j):
                     board.add_adjacency(position, northwest, 'vertex', 'nw')
 
         return board
     
+    def create_half_board(team = 'white', br=(0,0), br_rendered=None, rotation=0) -> GraphBoard:
+        if br_rendered == None:
+            br_rendered = br
+        board = GraphPresets.create_empty_rectangular_grid(4, 8, br, br_rendered, rotation)
+
+        def shift(position_x, position_y):
+            position = (position_x, position_y)
+            if shift == (0, 0):
+                return position
+            return (position[0] + br[0], position[1] + br[1])
+
+
+        # Add Team Pieces
+        first_row = [Tile(Piece('rook', team, facing='n')), Tile(Piece('knight', team, facing='n')), Tile(Piece('bishop', team, facing='n')), Tile(Piece('queen', team, facing='n')), Tile(Piece('king', team, facing='n')), Tile(Piece('bishop', team, facing='n')), Tile(Piece('knight', team, facing='n')), Tile(Piece('rook', team, facing='n'))]
+        second_row = [Tile(Piece('pawn', team, facing='n')) for i in range(8)]
+        for i in range(8):
+            board.set_node_tile(shift(0, i), first_row[i])
+            board.set_node_tile(shift(1, i), second_row[i])
+
+        return board
+
+
     def create_standard_board(team1 = 'white', team2 = 'black', distance = 4) -> GraphBoard:
         # Create empty board
         board = GraphPresets.create_empty_rectangular_grid(4+distance, 8)
