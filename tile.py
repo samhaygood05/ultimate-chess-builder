@@ -38,6 +38,9 @@ class Tile:
         new_start = Tile(None, start_tile.type)
         return new_end, new_start
 
+    def set_texture(self, texture):
+        self.texture = texture
+
     def promote(self, promotion):
         self.piece.promote(promotion)
         return self

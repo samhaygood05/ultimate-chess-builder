@@ -35,7 +35,7 @@ class Move:
             current_position = new_position
             current_direction = new_direction
         
-        return current_position, board.get_direction_from_relative(start_direction, self.end_direction)
+        return current_position, board.get_direction_from_relative(start_direction, self.end_direction), new_direction
 
     def __str__(self) -> str:
         return " -> ".join([f"{direction} ({type})" for direction, type in self.sequence])

@@ -1,3 +1,2 @@
-from .abstract_team import *
-from .team import *
-from .time_team import *
+from .abstract_team import AbstractTeam
+from .team import Team, TeamPresets

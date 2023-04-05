@@ -77,8 +77,8 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         square_size = 1 / 10
         outer_border_width = 0.3 * square_size # set the width of the border
         inner_border_width = 0.05 * square_size # set the width of the border
-        board_width = self.columns * square_size
-        board_height = self.rows * square_size
+        board_width = (self.columns + 1) * square_size
+        board_height = (self.rows + 1) * square_size
         quads = dict()
 
         outer_border = (
@@ -139,7 +139,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         for row, col in self.board.nodes.keys():
 
             x_pos = x + (col) * square_size
-            y_pos = y + (self.rows - row - 1) * square_size
+            y_pos = y + (self.rows - row) * square_size
             z_pos = z
             quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
             on_screen = SquareGraphRenderEngine.is_on_screen(quad, prjMat, zoom)
@@ -210,7 +210,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
         for row, col in self.board.nodes.keys():
                 
             x_pos = x + (col) * square_size
-            y_pos = y + (self.rows - row - 1) * square_size
+            y_pos = y + (self.rows - row) * square_size
             z_pos = z - 0.01
             quad = ((x_pos, y_pos, z_pos), (x_pos + square_size, y_pos, z_pos), (x_pos + square_size, y_pos + square_size, z_pos), (x_pos, y_pos + square_size, z_pos))
             on_screen = SquareGraphRenderEngine.is_on_screen(quad, prjMat, zoom)
@@ -386,7 +386,7 @@ class SquareGraphRenderEngine(AbstractRenderEngine):
 
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
-        self.camera_pos = [-self.columns / 20, -self.rows / 20, 0.5]
+        self.camera_pos = [-(self.columns + 0.5) / 20, -(self.rows + 0.5) / 20, 0.5]
         
         self.store_imgs()
 

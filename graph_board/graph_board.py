@@ -116,6 +116,8 @@ class GraphBoard:
         edge_graph = nx.DiGraph()
 
         for position, node in self.nodes.items():
+            if adjacency not in node.adjacencies.keys():
+                continue
             edge_graph.add_node(position)
             for neightbor_direction, neighbor_position in node.adjacencies[adjacency].values():
                 edge_graph.add_edge(position, neighbor_position)

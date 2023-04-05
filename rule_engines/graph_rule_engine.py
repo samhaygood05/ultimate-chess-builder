@@ -42,7 +42,7 @@ class GraphRuleEngine:
             self.promotion_tiles = promotion_tiles
 
         if turn_order == None:
-            self.turn_order = ['white', 'black']
+            self.turn_order = list(self.teams.keys())
         else:
             self.turn_order = turn_order
 
@@ -79,7 +79,7 @@ class GraphRuleEngine:
                         i = 0
                         while i in range(move_distance) or move_distance == -1:
                             i += 1
-                            new_position, new_facing = move.get_end_position(board, new_position, new_facing)
+                            new_position, new_facing, last_movement = move.get_end_position(board, new_position, new_facing)
                             if new_position == None:
                                 break
                             target = board.get_node_tile(new_position)
@@ -90,16 +90,18 @@ class GraphRuleEngine:
                             except:
                                 disallowed_pieces = []
 
+                            if (new_position, last_movement) in legal_moves:
+                                break
                             if piece.name in disallowed_pieces:
                                 break
                             if target.piece == None and can_move_empty:
-                                legal_moves.append(new_position)
+                                legal_moves.append((new_position, last_movement))
                             elif target.piece != None:
                                 if can_capture and not target.piece.is_allies(allies, not multiteam_capture_ally):
-                                    legal_moves.append(new_position)
+                                    legal_moves.append((new_position, last_movement))
                                 break
 
-        return legal_moves
+        return [move[0] for move in legal_moves]
     
     def get_legal_moves(self, position, board: GraphBoard, check=False):
         tile = board.get_node_tile(position)

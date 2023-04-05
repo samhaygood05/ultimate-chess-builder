@@ -1,8 +1,9 @@
-from boards import *
 from graph_board import GraphBoard, GraphPresets as gp
 from render_engines import *
 from rule_engines import GraphRuleEngine
 from movement import RuleSet, RulePresets as rp, MovesetPresets as mp
+from teams import Team, TeamPresets as tp
+from piece import Piece
 import pygame
 import matplotlib.pyplot as plt
 import random
@@ -10,9 +11,8 @@ import random
 if __name__ == "__main__":
     pygame.init()
 
-    board = gp.create_standard_board()
-    rule_set = rp.STANDARD.update({'rook': RuleSet('rook', 50, [mp.ROOK, mp.WARP])})
-    rule_engine = GraphRuleEngine(rule_set)
+    board = gp.create_empty_rectangular_grid(8, 8)
+    rule_engine = GraphRuleEngine(teams={'white': tp.WHITE})
 
     for i in range(8):
         board.add_adjacency((i, 0), (i, 7), 'edge', 'e')
@@ -40,10 +40,10 @@ if __name__ == "__main__":
         board.add_adjacency((7, i+4), (7, i), 'vertex', 'ne')
         board.add_adjacency((7, i+4), (7, i), 'vertex', 'nw')
 
-    board.add_adjacency((0, 0), (4, 4), 'warp', 'warp')
+    board.set_node_piece((4, 4), Piece('bishop', 'white', 'n'))
 
-    renderer = SquareGraphRenderEngine(board, rule_engine)
-    board.visualize_graph_board('edge')
-    # renderer.initialize((800, 600))
+    renderer = SquareGraphRenderEngine(board)
+    # board.visualize_graph_board('vertex')
+    renderer.initialize((800, 600))
 
     plt.show()
