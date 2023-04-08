@@ -17,7 +17,7 @@ limitations under the License.
 from teams.team import TeamPresets as tp
 
 class Piece:
-    def __init__(self, name, team, facing, is_royal=None, has_moved=False, secondary_team=None, trinary_team=None, quadinary_team=None):
+    def __init__(self, name, team, facing='n', is_royal=None, has_moved=False, secondary_team=None, trinary_team=None, quadinary_team=None):
         self.name = name
         self.team = team
         self.facing = facing

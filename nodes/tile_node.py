@@ -17,15 +17,37 @@ limitations under the License.
 from tile import Tile
 
 class TileNode:
-    def __init__(self, position, tile: Tile=None, adjacency_types=None, render_position=None, render_rotation=None):
+    def __init__(self, position, tile: Tile=None, adjacency_types=None, render_polygon=None, texture_quad=None):
         self.position = position
         self.tile = tile
         if adjacency_types == None:
             self.adjacencies = {'edge': dict(), 'vertex': dict()}
         else:
             self.adjacencies = {adjacency : dict() for adjacency in adjacency_types}
-        self.render_position = render_position
-        self.render_rotation = render_rotation
+        if render_polygon == None:
+            self.render_polygon = (
+                (position[1] - 1/2, -position[0] - 1/2, 0), 
+                (position[1] + 1/2, -position[0] - 1/2, 0),
+                (position[1] + 1/2, -position[0] + 1/2, 0),
+                (position[1] - 1/2, -position[0] + 1/2, 0)
+            )
+        else:
+            self.render_polygon = render_polygon
+
+        if texture_quad == None or len(texture_quad) != 4:
+            center = (
+                sum(polygon[0] for polygon in self.render_polygon)/len(self.render_polygon), 
+                sum(polygon[1] for polygon in self.render_polygon)/len(self.render_polygon), 
+                sum(polygon[2] for polygon in self.render_polygon)/len(self.render_polygon)
+            )
+            self.texture_quad = (
+                (center[0] - 1/2, center[1] - 1/2, center[2]),
+                (center[0] + 1/2, center[1] - 1/2, center[2]),
+                (center[0] + 1/2, center[1] + 1/2, center[2]),
+                (center[0] - 1/2, center[1] + 1/2, center[2])
+            )
+        else:
+            self.texture_quad = texture_quad
 
     def set_piece(self, piece):
         self.tile.piece = piece

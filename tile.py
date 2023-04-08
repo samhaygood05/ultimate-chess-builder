@@ -17,7 +17,7 @@ limitations under the License.
 from piece import Piece
 
 class Tile:
-    def __init__(self, piece: Piece=None, type=None, tint=(1.0, 1.0, 1.0), texture=None, disallowed_pieces=None):
+    def __init__(self, piece: Piece=None, type=None, tint=(1.0, 1.0, 1.0), texture=None, disallowed_pieces=None, not_selectable=False):
         self.piece = piece
         self.type = type
         self.tint = tint
@@ -29,6 +29,7 @@ class Tile:
             self.disallowed_pieces = []
         else:
             self.disallowed_pieces = disallowed_pieces
+        self.not_selectable = not_selectable
 
     def copy(self):
         return Tile(self.piece, self.type, self.tint, self.texture, self.disallowed_pieces)

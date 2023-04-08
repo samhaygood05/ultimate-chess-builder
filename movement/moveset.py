@@ -67,8 +67,7 @@ class MovesetPresets:
         Move(('l', 'edge'), ('l', 'edge'), ('f', 'edge')),
         Move(('l', 'edge'), ('r', 'edge'), ('f', 'edge')),
         Move(('r', 'edge'), ('l', 'edge'), ('f', 'edge')),
-        Move(('r', 'edge'), ('r', 'edge'), ('f', 'edge')),
-
+        Move(('r', 'edge'), ('r', 'edge'), ('f', 'edge'))
         ], 1)
     BISHOP = Moveset([Move(('fl', 'vertex')), Move(('fr', 'vertex')), Move(('bl', 'vertex')), Move(('br', 'vertex'))])
     QUEEN = Moveset([
@@ -88,5 +87,81 @@ class MovesetPresets:
         Move(('r', 'edge'), ('f', 'edge'), ('f', 'edge'), ('r', 'edge'))
         ], 1)
     
+
+    PAWN_CAPTURE_GLINSKI = Moveset([Move(('fl', 'edge')), Move(('fr', 'edge'))], 1, False, True)
+    ROOK_GLINSKI = Moveset([
+        Move(('f', 'edge')),
+        Move(('fr', 'edge')),
+        Move(('br', 'edge')),
+        Move(('b', 'edge')),
+        Move(('bl', 'edge')),
+        Move(('fl', 'edge'))
+    ])
+    KNIGHT_GLINSKI = Moveset([
+        Move(('f', 'edge'), ('f', 'edge'), ('fl', 'edge')),
+        Move(('f', 'edge'), ('f', 'edge'), ('fr', 'edge')),
+        Move(('b', 'edge'), ('f', 'edge'), ('fl', 'edge')),
+        Move(('b', 'edge'), ('f', 'edge'), ('fr', 'edge')),
+        Move(('fl', 'edge'), ('f', 'edge'), ('fl', 'edge')),
+        Move(('fl', 'edge'), ('f', 'edge'), ('fr', 'edge')),
+        Move(('fr', 'edge'), ('f', 'edge'), ('fl', 'edge')),
+        Move(('fr', 'edge'), ('f', 'edge'), ('fr', 'edge')),
+        Move(('bl', 'edge'), ('f', 'edge'), ('fl', 'edge')),
+        Move(('bl', 'edge'), ('f', 'edge'), ('fr', 'edge')),
+        Move(('br', 'edge'), ('f', 'edge'), ('fl', 'edge')),
+        Move(('br', 'edge'), ('f', 'edge'), ('fr', 'edge')),
+
+        Move(('f', 'edge'), ('fl', 'edge'), ('f', 'edge')),
+        Move(('f', 'edge'), ('fr', 'edge'), ('f', 'edge')),
+        Move(('b', 'edge'), ('fl', 'edge'), ('f', 'edge')),
+        Move(('b', 'edge'), ('fr', 'edge'), ('f', 'edge')),
+        Move(('fl', 'edge'), ('fl', 'edge'), ('f', 'edge')),
+        Move(('fl', 'edge'), ('fr', 'edge'), ('f', 'edge')),
+        Move(('fr', 'edge'), ('fl', 'edge'), ('f', 'edge')),
+        Move(('fr', 'edge'), ('fr', 'edge'), ('f', 'edge')),
+        Move(('bl', 'edge'), ('fl', 'edge'), ('f', 'edge')),
+        Move(('bl', 'edge'), ('fr', 'edge'), ('f', 'edge')),
+        Move(('br', 'edge'), ('fl', 'edge'), ('f', 'edge')),
+        Move(('br', 'edge'), ('fr', 'edge'), ('f', 'edge'))
+    ], 1)
+    BISHOP_GLINSKI = Moveset([
+        Move(('ffr', 'vertex')),
+        Move(('r', 'vertex')),
+        Move(('bbr', 'vertex')),
+        Move(('bbl', 'vertex')),
+        Move(('l', 'vertex')),
+        Move(('ffl', 'vertex'))
+    ])
+    QUEEN_GLINSKI = Moveset([
+        Move(('f', 'edge')),
+        Move(('fr', 'edge')),
+        Move(('br', 'edge')),
+        Move(('b', 'edge')),
+        Move(('bl', 'edge')),
+        Move(('fl', 'edge')),
+
+        Move(('ffr', 'vertex')),
+        Move(('r', 'vertex')),
+        Move(('bbr', 'vertex')),
+        Move(('bbl', 'vertex')),
+        Move(('l', 'vertex')),
+        Move(('ffl', 'vertex'))
+    ])
+    KING_GLINSKI = Moveset([
+        Move(('f', 'edge')),
+        Move(('fr', 'edge')),
+        Move(('br', 'edge')),
+        Move(('b', 'edge')),
+        Move(('bl', 'edge')),
+        Move(('fl', 'edge')),
+        
+        Move(('ffr', 'vertex')),
+        Move(('r', 'vertex')),
+        Move(('bbr', 'vertex')),
+        Move(('bbl', 'vertex')),
+        Move(('l', 'vertex')),
+        Move(('ffl', 'vertex'))
+    ], 1)
+
     WARP = Moveset([Move(('warp', 'warp'))], 1, True, False)
 

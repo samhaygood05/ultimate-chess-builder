@@ -44,11 +44,11 @@ class GraphBoard:
     def get_direction_from_relative(self, forward_direction, relative_direction):
         return self.directions.get_direction_from_relative(forward_direction, relative_direction)
 
-    def add_node(self, position, tile: Tile=None, tint=None, render_position=None, render_rotation=None):
+    def add_node(self, position, tile: Tile=None, tint=None, render_polygon=None, texture_quad=None):
         if tint == None:
             tint = (0.9, 0.9, 0.9) if (position[0] + position[1]) % 2 == 0 else (0.7, 0.7, 0.7)
         tile.tint = tint
-        node = TileNode(position, tile, render_position=render_position, render_rotation=render_rotation)
+        node = TileNode(position, tile, render_polygon=render_polygon, texture_quad=texture_quad)
         self.nodes[position] = node
         if tile != None and tile.piece != None and tile.piece.is_royal:
             for team in tile.piece.get_team_names():
@@ -87,11 +87,13 @@ class GraphBoard:
             self.adjacency_graphs[adjacency_type] = dict()
         if adjacency_type not in self.nodes[position1].adjacencies.keys():
             self.nodes[position1].adjacencies[adjacency_type] = dict()
-        self.nodes[position1].adjacencies[adjacency_type][direction] = (self.nodes[position2], position2, change_direction_to)
+        if direction not in self.nodes[position1].adjacencies[adjacency_type].keys():
+            self.nodes[position1].adjacencies[adjacency_type][direction] = []
+        self.nodes[position1].adjacencies[adjacency_type][direction].append((self.nodes[position2], position2, change_direction_to))
         self.adjacency_graphs[adjacency_type][(position1, position2)] = (self.nodes[position1], self.nodes[position2])
 
     def remove_adjacency(self, position1, position2, adjacency_type, direction):
-        self.nodes[position1].adjacencies[adjacency_type].pop(direction)
+        self.nodes[position1].adjacencies[adjacency_type][direction].pop((self.nodes[position2], position2, 'f'))
         self.adjacency_graphs[adjacency_type].pop((position1, position2))
 
     def get_node_adjacencies(self, position, adjacency_type):
@@ -104,40 +106,161 @@ class GraphBoard:
     def get_node(self, position):
         return self.nodes[position]
     
+    def init_hull(self):
+        points = []
+        for node in self.nodes.values():
+            polygon = node.render_polygon
+            for vertex in polygon:
+                points.append(vertex)
+        
+        def left_index(points):
+            left_most_index = 0
+            for i in range(1, len(points)):
+                if points[i][0] < points[left_most_index][0]:
+                    left_most_index = i
+            return left_most_index
+
+        def polygon_centroid(vertices):
+            area = 0
+            x_sum = 0
+            y_sum = 0
+            for i in range(len(vertices)):
+                j = (i + 1) % len(vertices)
+                cross_product = vertices[i][0] * vertices[j][1] - vertices[j][0] * vertices[i][1]
+                area += cross_product
+                x_sum += (vertices[i][0] + vertices[j][0]) * cross_product
+                y_sum += (vertices[i][1] + vertices[j][1]) * cross_product
+
+            area *= 0.5
+            x_centroid = x_sum / (6 * area)
+            y_centroid = y_sum / (6 * area)
+
+            return (x_centroid, y_centroid)
+        
+        def orientation(p, q, r):
+            val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+            if val == 0:
+                return 0  # collinear
+            return 1 if val > 0 else 2  # clockwise or counterclockwise
+
+        n = len(points)
+        if n < 3:
+            return [], None
+
+        hull = []
+
+        l = left_index(points)
+        p = l
+        q = None
+        while True:
+            hull.append(points[p])
+            q = (p + 1) % n
+
+            for i in range(n):
+                if orientation(points[p], points[i], points[q]) == 2:
+                    q = i
+
+            p = q
+            if p == l:
+                break
+
+        hull_tuple = tuple(hull)
+        center = polygon_centroid(hull)
+
+        return (hull_tuple, center)
+
     def copy(self):
         new_board = GraphBoard(self.adjacency_graphs.keys(), self.directions, self.current_team_index)
         for position, node in self.nodes.items():
-            new_board.add_node(position, node.tile, node.tile.tint, node.render_position, node.render_rotation)
+            new_board.add_node(position, node.tile, node.tile.tint, node.render_polygon, node.texture_quad)
             new_board.get_node(position).adjacencies = node.adjacencies
 
         new_board.adjacency_graphs = self.adjacency_graphs
         return new_board
     
+    def clear_pieces(self):
+        for position in self.nodes.keys():
+            self.get_node_tile(position).piece = None
+
     def get_node_tile(self, position) -> Tile:
         return self.nodes[position].tile
     
     def set_node_tile(self, position, tile, tint=None):
         if tint == None:
-            tint = (0.9, 0.9, 0.9) if (position[0] + position[1]) % 2 == 0 else (0.7, 0.7, 0.7)
+            tint = self.nodes[position].tile.tint
         tile.tint = tint
         self.nodes[position].tile = tile
+        if tile != None and tile.piece != None and tile.piece.is_royal:
+            for team in tile.piece.get_team_names():
+                if team not in self.royal_tiles:
+                    self.royal_tiles[team] = []
+                self.royal_tiles[team].append(position)
+        elif tile != None and tile.piece != None and not tile.piece.is_royal:
+            for team in tile.piece.get_team_names():
+                if team in self.royal_tiles:
+                    try:
+                        self.royal_tiles[team].remove(position)
+                    except:
+                        pass
+
+        if tile != None and tile.texture not in self.tile_textures:
+            self.tile_textures.append(tile.texture)
 
     def get_node_piece(self, position) -> Piece:
         if self.nodes[position].tile == None:
             return None
         return self.nodes[position].tile.piece
-    
+
     def set_node_piece(self, position, piece):
         self.nodes[position].tile.piece = piece
+        if piece != None and piece.is_royal:
+            for team in piece.get_team_names():
+                if team not in self.royal_tiles:
+                    self.royal_tiles[team] = []
+                if position not in self.royal_tiles[team]:
+                    self.royal_tiles[team].append(position)
+        else:
+            for team in self.royal_tiles.keys():
+                try:
+                    self.royal_tiles[team].remove(position)
+                except:
+                    pass
+
+    def get_piece_teams(self, position):
+        piece = self.get_node_piece(position)
+        if piece != None:
+            return piece.get_team_names()
+        return []
+
+    def get_team_pieces(self, team):
+        positions = []
+        for position in self.nodes.keys():
+            if team in self.get_piece_teams(position):
+                positions.append(position)
+        return positions
     
     def get_node_type(self, position):
         if self.nodes[position].tile == None:
             return None
         return self.nodes[position].tile.type
     
-    def set_node_rendering(self, position, render_position, render_rotation):
-        self.nodes[position].render_position = render_position
-        self.nodes[position].render_rotation = render_rotation
+    def set_node_rendering(self, position, render_polygon=None, texture_quad=None):
+        if render_polygon != None:
+            self.nodes[position].render_polygon = render_polygon
+        if texture_quad != None:
+            self.nodes[position].texture_quad = texture_quad
+        elif render_polygon != None:
+            center = (
+                sum(vertex[0] for vertex in render_polygon)/len(render_polygon), 
+                sum(vertex[1] for vertex in render_polygon)/len(render_polygon), 
+                sum(vertex[2] for vertex in render_polygon)/len(render_polygon)
+            )
+            self.nodes[position].texture_quad = (
+                (center[0] - 1/2, center[1] - 1/2, center[2]),
+                (center[0] + 1/2, center[1] - 1/2, center[2]),
+                (center[0] + 1/2, center[1] + 1/2, center[2]),
+                (center[0] - 1/2, center[1] + 1/2, center[2])
+            )
 
     def __str__(self) -> str:
         return f'GraphBoard({self.nodes}, {self.edges})'
@@ -152,8 +275,9 @@ class GraphBoard:
             if adjacency not in node.adjacencies.keys():
                 continue
             edge_graph.add_node(position)
-            for neightbor_direction, neighbor_position, change_direction in node.adjacencies[adjacency].values():
-                edge_graph.add_edge(position, neighbor_position)
+            for edges in node.adjacencies[adjacency].values():
+                for neightbor_direction, neighbor_position, change_direction in edges:
+                    edge_graph.add_edge(position, neighbor_position)
 
         edge_pos = nx.kamada_kawai_layout(edge_graph)
 
@@ -165,9 +289,7 @@ class GraphBoard:
 
 class GraphPresets:
 
-    def create_empty_rectangular_grid(i, j, br=(0,0), br_rendered=None, rotation=0) -> GraphBoard:
-        if br_rendered == None:
-            br_rendered = br
+    def empty_rectangular_grid(i, j, br=(0,0), tint1=(0.7, 0.7, 0.7), tint2=(0.9, 0.9, 0.9)) -> GraphBoard:
         board = GraphBoard()
 
         def shift(position_x, position_y):
@@ -175,29 +297,16 @@ class GraphPresets:
             if shift == (0, 0):
                 return position
             return (position[0] + br[0], position[1] + br[1])
-        
-        def rendered_shift(position_x, position_y):
-            position = (position_x, position_y)
-            if shift == (0, 0):
-                return position
-            return (position[0] + br_rendered[0], position[1] + br_rendered[1])
-
-        def rotate(position):
-            if rotation == 0:
-                return position
-            rotation_rad = rotation * math.pi / 180
-            return (position[0] * math.cos(rotation_rad) - position[1] * math.sin(rotation_rad), position[0] * math.sin(rotation_rad) + position[1] * math.cos(rotation_rad))
-
-        def tf(position_x, position_y):
-            transformed = rendered_shift(*rotate((position_x, position_y)))
-            return transformed
 
         # Add nodes for each position on the ixj grid
         for row in range(i):
             for col in range(j):
                 position = shift(row, col)
-                render_position = tf(row, col)
-                board.add_node(position, Tile(), render_position=render_position, render_rotation=rotation)
+                if (position[0] + position[1]) % 2 == 0:
+                    tint = tint1
+                else:
+                    tint = tint2
+                board.add_node(position, Tile(), tint)
 
         # Add edges between neighboring nodes
         for row in range(i):
@@ -234,10 +343,8 @@ class GraphPresets:
 
         return board
     
-    def create_half_board(team = 'white', br=(0,0), br_rendered=None, rotation=0) -> GraphBoard:
-        if br_rendered == None:
-            br_rendered = br
-        board = GraphPresets.create_empty_rectangular_grid(4, 8, br, br_rendered, rotation)
+    def half_board(team = 'white', br=(0,0), i=2, tint1=(0.7, 0.7, 0.7), tint2=(0.9, 0.9, 0.9)) -> GraphBoard:
+        board = GraphPresets.empty_rectangular_grid(2+i, 8, br, tint1, tint2)
 
         def shift(position_x, position_y):
             position = (position_x, position_y)
@@ -247,7 +354,7 @@ class GraphPresets:
 
 
         # Add Team Pieces
-        first_row = [Tile(Piece('rook', team, facing='n')), Tile(Piece('knight', team, facing='n')), Tile(Piece('bishop', team, facing='n')), Tile(Piece('queen', team, facing='n')), Tile(Piece('king', team, facing='n')), Tile(Piece('bishop', team, facing='n')), Tile(Piece('knight', team, facing='n')), Tile(Piece('rook', team, facing='n'))]
+        first_row = [Tile(Piece('rook', team, facing='n')), Tile(Piece('knight', team, facing='n')), Tile(Piece('bishop', team, facing='n')), Tile(Piece('queen', team, facing='n')), Tile(Piece('king', team, facing='n', is_royal=True)), Tile(Piece('bishop', team, facing='n')), Tile(Piece('knight', team, facing='n')), Tile(Piece('rook', team, facing='n'))]
         second_row = [Tile(Piece('pawn', team, facing='n')) for i in range(8)]
         for i in range(8):
             board.set_node_tile(shift(0, i), first_row[i])
@@ -255,20 +362,19 @@ class GraphPresets:
 
         return board
 
-
-    def create_standard_board(team1 = 'white', team2 = 'black', distance = 4) -> GraphBoard:
+    def standard_board(team1 = 'white', team2 = 'black', distance = 4) -> GraphBoard:
         # Create empty board
-        board = GraphPresets.create_empty_rectangular_grid(4+distance, 8)
+        board = GraphPresets.empty_rectangular_grid(4+distance, 8)
 
         # Add Team1 Pieces
-        first_row = [Tile(Piece('rook', team1, facing='n')), Tile(Piece('knight', team1, facing='n')), Tile(Piece('bishop', team1, facing='n')), Tile(Piece('queen', team1, facing='n')), Tile(Piece('king', team1, facing='n')), Tile(Piece('bishop', team1, facing='n')), Tile(Piece('knight', team1, facing='n')), Tile(Piece('rook', team1, facing='n'))]
+        first_row = [Tile(Piece('rook', team1, facing='n')), Tile(Piece('knight', team1, facing='n')), Tile(Piece('bishop', team1, facing='n')), Tile(Piece('queen', team1, facing='n')), Tile(Piece('king', team1, facing='n', is_royal=True)), Tile(Piece('bishop', team1, facing='n')), Tile(Piece('knight', team1, facing='n')), Tile(Piece('rook', team1, facing='n'))]
         second_row = [Tile(Piece('pawn', team1, facing='n')) for i in range(8)]
         for i in range(8):
             board.set_node_tile((0, i), first_row[i])
             board.set_node_tile((1, i), second_row[i])
 
         # Add Team2 Pieces
-        last_row = [Tile(Piece('rook', team2, facing='s')), Tile(Piece('knight', team2, facing='s')), Tile(Piece('bishop', team2, facing='s')), Tile(Piece('queen', team2, facing='s')), Tile(Piece('king', team2, facing='s')), Tile(Piece('bishop', team2, facing='s')), Tile(Piece('knight', team2, facing='s')), Tile(Piece('rook', team2, facing='s'))]
+        last_row = [Tile(Piece('rook', team2, facing='s')), Tile(Piece('knight', team2, facing='s')), Tile(Piece('bishop', team2, facing='s')), Tile(Piece('queen', team2, facing='s')), Tile(Piece('king', team2, facing='s', is_royal=True)), Tile(Piece('bishop', team2, facing='s')), Tile(Piece('knight', team2, facing='s')), Tile(Piece('rook', team2, facing='s'))]
         second_last_row = [Tile(Piece('pawn', team2, facing='s')) for i in range(8)]
         for i in range(8):
             board.set_node_tile((3+distance, i), last_row[i])
@@ -276,7 +382,7 @@ class GraphPresets:
 
         return board
     
-    def create_empty_hexagonal_grid(i, j, k) -> GraphBoard:
+    def empty_hexagonal_grid(i, j, k, tint1=(0.9, 0.9, 0.9), tint2=(0.8, 0.8, 0.8), tint3=(0.7, 0.7, 0.7)) -> GraphBoard:
         board = GraphBoard(directions=dp.hexagonal_2d())
         dq = (0 , -1, 1 )
         dr = (1 , 0 , -1)
@@ -292,6 +398,12 @@ class GraphPresets:
         def scale(position, scalar):
             return tuple(map(lambda x: x * scalar, position))
 
+        def hexagon(i, j):
+            x = 3/2 * j + 3/2 * i
+            y = math.sqrt(3)/2.0 * j - math.sqrt(3)/2.0 * i
+            angles = [60*k*math.pi/180 for k in range(6)]
+            hexagon = [(x + math.cos(angle), -y - math.sin(angle), 0) for angle in angles]
+            return hexagon
         size_x = i // 2
         size_y = j // 2
         size_z = k // 2
@@ -317,31 +429,125 @@ class GraphPresets:
                 for s in range(-size_z, size_z + z_mod):
                     dx = add(add(scale(dq, q), scale(dr, r)), scale(ds, s))
                     if dx not in board.nodes:
-                        board.add_node(dx)
+                        if (dx[0] - dx[1]) % 3 == 0:
+                            color = tint1
+                        elif (dx[0] - dx[1]) % 3 == 1:
+                            color = tint2
+                        else:
+                            color = tint3
+                        board.add_node(dx, Tile(), color, hexagon(dx[1], dx[2]))
 
         for position in board.nodes:
             edge_neighbors = [
-                (add(position, dq), '+q'),
-                (add(position, dr), '+r'),
-                (add(position, ds), '+s'),
-                (add(position, ndq), '-q'),
-                (add(position, ndr), '-r'),
-                (add(position, nds), '-s')
+                (add(position, dq), 'n'),
+                (add(position, dr), 'se'),
+                (add(position, ds), 'sw'),
+                (add(position, ndq), 's'),
+                (add(position, ndr), 'nw'),
+                (add(position, nds), 'ne')
             ]
             vertex_neighbors = [
-                (add(add(position, dq), ndr), '+q-r'),
-                (add(add(position, dr), nds), '+r-s'),
-                (add(add(position, ds), ndq), '+s-q'),
-                (add(add(position, ndq), dr), '-q+r'),
-                (add(add(position, ndr), ds), '-r+s'),
-                (add(add(position, nds), dq), '-s+q')
+                (add(add(position, dq), ndr), 'nnw'),
+                (add(add(position, dr), nds), 'e'),
+                (add(add(position, ds), ndq), 'ssw'),
+                (add(add(position, ndq), dr), 'sse'),
+                (add(add(position, ndr), ds), 'w'),
+                (add(add(position, nds), dq), 'nne')
             ]
             for neighbor in edge_neighbors:
-                if neighbor in board.nodes:
+                if neighbor[0] in board.nodes:
                     board.add_adjacency(position, neighbor[0], 'edge', neighbor[1])
 
             for neighbor in vertex_neighbors:
-                if neighbor in board.nodes:
+                if neighbor[0] in board.nodes:
+                    board.add_adjacency(position, neighbor[0], 'vertex', neighbor[1])
+        
+        return board
+
+    def empty_hexagonal_vertex_grid(i, j, k, tint1=(0.9, 0.9, 0.9), tint2=(0.8, 0.8, 0.8), tint3=(0.7, 0.7, 0.7)) -> GraphBoard:
+
+        board = GraphBoard(directions=dp.hexagonal_2d())
+        dq = (0 , -1, 1 )
+        dr = (1 , 0 , -1)
+        ds = (-1, 1 , 0 )
+
+        ndq = (0 , 1 , -1)
+        ndr = (-1, 0 , 1 )
+        nds = (1 , -1, 0 )
+
+        def add(position1, position2):
+            return tuple(map(sum, zip(position1, position2)))
+        
+        def scale(position, scalar):
+            return tuple(map(lambda x: x * scalar, position))
+
+        def rot30(p):
+            theta = math.radians(-30)
+            return (p[0]*math.cos(theta) - p[1]*math.sin(theta), p[0]*math.sin(theta) + p[1]*math.cos(theta), 0)
+
+        def hexagon(i, j):
+            x = 3/2 * j + 3/2 * i
+            y = math.sqrt(3)/2.0 * j - math.sqrt(3)/2.0 * i
+            angles = [60*k*math.pi/180 for k in range(6)]
+            hexagon = [(x + math.cos(angle), -y - math.sin(angle), 0) for angle in angles]
+            hexagon = [rot30(vertex) for vertex in hexagon]
+            return hexagon
+        size_x = i // 2
+        size_y = j // 2
+        size_z = k // 2
+        
+        if i % 2 == 0:
+            x_mod = 0
+        else:
+            x_mod = 1
+
+        if j % 2 == 0:
+            y_mod = 0
+        else:
+            y_mod = 1
+
+        if k % 2 == 0:
+            z_mod = 0
+        else:
+            z_mod = 1
+
+        # Add nodes for each position on the ixjxk grid
+        for q in range(-size_x, size_x + x_mod):
+            for r in range(-size_y, size_y + y_mod):
+                for s in range(-size_z, size_z + z_mod):
+                    dx = add(add(scale(dq, q), scale(dr, r)), scale(ds, s))
+                    if dx not in board.nodes:
+                        if (dx[0] - dx[1]) % 3 == 0:
+                            color = tint1
+                        elif (dx[0] - dx[1]) % 3 == 1:
+                            color = tint2
+                        else:
+                            color = tint3
+                        board.add_node(dx, Tile(), color, hexagon(dx[1], dx[2]))
+
+        for position in board.nodes:
+            edge_neighbors = [
+                (add(position, dq), 'n'),
+                (add(position, dr), 'se'),
+                (add(position, ds), 'sw'),
+                (add(position, ndq), 's'),
+                (add(position, ndr), 'nw'),
+                (add(position, nds), 'ne')
+            ]
+            vertex_neighbors = [
+                (add(add(position, dq), ndr), 'nnw'),
+                (add(add(position, dr), nds), 'e'),
+                (add(add(position, ds), ndq), 'ssw'),
+                (add(add(position, ndq), dr), 'sse'),
+                (add(add(position, ndr), ds), 'w'),
+                (add(add(position, nds), dq), 'nne')
+            ]
+            for neighbor in edge_neighbors:
+                if neighbor[0] in board.nodes:
+                    board.add_adjacency(position, neighbor[0], 'edge', neighbor[1])
+
+            for neighbor in vertex_neighbors:
+                if neighbor[0] in board.nodes:
                     board.add_adjacency(position, neighbor[0], 'vertex', neighbor[1])
         
         return board

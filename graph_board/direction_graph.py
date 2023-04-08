@@ -57,7 +57,7 @@ class DirectionPresets:
 
     def hexagonal_2d():
         directions = DirectionGraph()
-        ordinal_directions = ['+q', '-s+q', '-s', '+r-s', '+r', '-q+r', '-q', '+s-q', '+s', '-r+s', '-r', '+q-r']
+        ordinal_directions  = ['n', 'nne', 'ne', 'e', 'se', 'sse', 's', 'ssw', 'sw', 'w', 'nw', 'nnw']
         relative_directions = ['f', 'ffr', 'fr', 'r', 'br', 'bbr', 'b', 'bbl', 'bl', 'l', 'fl', 'ffl']
         for direction in ordinal_directions:
             directions.add_node(DirectionNode(direction))

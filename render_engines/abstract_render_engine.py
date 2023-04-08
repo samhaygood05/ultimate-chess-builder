@@ -16,6 +16,8 @@ limitations under the License.
 
 from abc import ABC, abstractmethod
 import math
+from PyQt5.QtWidgets import QApplication, QInputDialog
+
 
 class AbstractRenderEngine(ABC):
     @abstractmethod
@@ -44,12 +46,14 @@ class AbstractRenderEngine(ABC):
         projected_polygon = [AbstractRenderEngine.TransformVec3(vertex, prjMat) for vertex in polygon]
         ndc = [(2.0 * mpos[0]/display[0] - 1.0)*zoom, (2.0 * mpos[1]/display[0] - display[1]/display[0])*zoom]
         return AbstractRenderEngine.point_inside_polygon(ndc, projected_polygon)
-    
-    def rotate_quad(quad, angle):
-        angle_rad = angle * math.pi / 180
-        cos = math.cos(angle_rad)
-        sin = math.sin(angle_rad)
-        return [(cos * vertex[0] - sin * vertex[1], sin * vertex[0] + cos * vertex[1], vertex[2]) for vertex in quad]
+
+    def get_save_file_name(default_name):
+        app = QApplication([])
+        file_name, ok = QInputDialog.getText(None, "Save File Name", "Enter the name of the save file:", text=default_name)
+        if ok:
+            return file_name or default_name
+        return None
+
 
     def point_inside_polygon(point, polygon):
             n = len(polygon)

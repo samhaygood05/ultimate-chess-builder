@@ -1,2 +1,2 @@
 from .abstract_render_engine import AbstractRenderEngine
-from .square_graph_render_engine import SquareGraphRenderEngine
+from .graph_render_engine import GraphRenderEngine
