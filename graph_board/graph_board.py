@@ -172,10 +172,13 @@ class GraphBoard:
     def copy(self):
         new_board = GraphBoard(self.adjacency_graphs.keys(), self.directions, self.current_team_index)
         for position, node in self.nodes.items():
-            new_board.add_node(position, node.tile, node.tile.tint, node.render_polygon, node.texture_quad)
+            new_board.add_node(position, node.tile.copy(), node.tile.tint, node.render_polygon, node.texture_quad)
             new_board.get_node(position).adjacencies = node.adjacencies
 
         new_board.adjacency_graphs = self.adjacency_graphs
+        for team in self.royal_tiles:
+            if team not in new_board.royal_tiles:
+                new_board.royal_tiles[team] = []
         return new_board
     
     def clear_pieces(self):

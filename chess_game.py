@@ -16,10 +16,15 @@ if __name__ == "__main__":
     sys.setrecursionlimit(10000)
     pygame.init()
 
-    game = 'hex/glinski'
+    game = 'square/4player_knight_allience'
 
     renderer = Variants.load(game)
 
-    renderer.initialize((800, 800), 1.0)
+    renderer.initialize((800, 800), 1.0, {
+        'blue': 'minmax_lib_smart-8',
+        'red': 'minmax_sib-8',
+        'yellow': 'minmax_sib_smart-8',
+        'green': 'random'
+    })
 
     plt.show()

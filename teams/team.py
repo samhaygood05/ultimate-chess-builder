@@ -19,7 +19,7 @@ from teams import AbstractTeam
 class Team(AbstractTeam):
     def __init__(self, name, allies=None, color=(1.0, 1.0, 1.0)):
         self.name = name
-        self.allies = ['empty', name]
+        self.allies = [name]
         if allies != None:
             self.allies.extend(allies)
         self.color = color
@@ -29,4 +29,3 @@ class TeamPresets:
     BLACK = Team('black', color=(0.0, 0.0, 0.0))
     RED = Team('red', color=(1.0, 0.0, 0.0))
     GREEN = Team('green', color=(0.0, 1.0, 0.0))
-    EMPTY = Team('empty')

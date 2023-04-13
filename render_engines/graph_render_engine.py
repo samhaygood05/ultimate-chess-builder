@@ -25,8 +25,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 import colorsys
-
-from variants import Variants
+import pickle
 
 class GraphRenderEngine(AbstractRenderEngine):
     def __init__(self, board: GraphBoard = None, rule_engine: GraphRuleEngine = None, illegal_moves=False):
@@ -47,117 +46,80 @@ class GraphRenderEngine(AbstractRenderEngine):
         copy_engine = GraphRenderEngine(board=self.board.copy(), rule_engine=self.rule_engine.copy(), illegal_moves=self.illegal_moves)
         return copy_engine
 
+    def get_board_color(self, current_team): 
+        if current_team == 'white':
+            return 0.8, 0.8, 0.8
+        elif current_team == 'black':
+            return 0.3, 0.3, 0.3
+        else:
+            team_color_hsv = colorsys.rgb_to_hsv(*self.rule_engine.teams[current_team].color)
+            return colorsys.hsv_to_rgb(team_color_hsv[0], 0.5 * team_color_hsv[1], 0.7 if team_color_hsv[2] == 1.0 else team_color_hsv[2])
+
     def draw_boarder(self, zoom, x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()
         glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
 
         current_team = self.rule_engine.turn_order[self.board.current_team_index]
-        if current_team == 'white':
-            board_color = (0.8, 0.8, 0.8)
-        elif current_team == 'black':
-            board_color = (0.3, 0.3, 0.3)
-        else:
-            team_color_hsv = colorsys.rgb_to_hsv(*self.rule_engine.teams[current_team].color)
-            board_color = colorsys.hsv_to_rgb(team_color_hsv[0], 0.5*team_color_hsv[1], 0.7 if team_color_hsv[2] == 1.0 else team_color_hsv[2])
+        board_color = self.get_board_color(current_team)
 
         square_size = 1 / 10
-        outer_border_width = 1.05 # set the width of the border
-        team_border_width = 1.04
-        inner_border_width = 1.01 # set the width of the border
+        border_widths = [1.05, 1.04, 1.01]  # Outer, Team, and Inner border widths
 
         hull, hull_center = self.hull
+
         def scale_hull(hull, center, scale):
-            centered_hull = [(vertex[0]-center[0], vertex[1]-center[1]) for vertex in hull]
-            hull_scale = [(vertex[0]*scale, vertex[1]*scale) for vertex in centered_hull]
-            hull_shift = [(vertex[0]+center[0], vertex[1]+center[1]) for vertex in hull_scale]
-            hull_proper_scaled = [(x + vertex[0]*square_size, y+ vertex[1]*square_size, z) for vertex in hull_shift]
-            return hull_proper_scaled
+            return [(x + (vx - center[0]) * scale * square_size, y + (vy - center[1]) * scale * square_size, z+vz)
+                    for vx, vy, vz in hull]
 
-        outer_border = scale_hull(hull, hull_center, outer_border_width)
+        def draw_border(border, color):
+            on_screen = GraphRenderEngine.is_on_screen(border, prjMat, zoom)
+            if on_screen:
+                glColor3f(*color)
+                glBegin(GL_POLYGON)
+                for vertex in border:
+                    glVertex3f(*vertex)
+                glEnd()
 
-        on_screen = GraphRenderEngine.is_on_screen(outer_border, prjMat, zoom)
-        if on_screen:
-            # Draw the border hull
-            glColor3f(0, 0, 0)
-            glBegin(GL_POLYGON)
-            for vertex in outer_border:
-                glVertex3f(*vertex)
-            glEnd()
-
-        team_border = scale_hull(hull, hull_center, team_border_width)
-
-        on_screen = GraphRenderEngine.is_on_screen(team_border, prjMat, zoom)
-        if on_screen:
-            # Draw the border hull
-            glColor3f(*board_color)
-            glBegin(GL_POLYGON)
-            for vertex in team_border:
-                glVertex3f(*vertex)
-            glEnd()
-
-        inner_border = scale_hull(hull, hull_center, inner_border_width)
-
-        on_screen = GraphRenderEngine.is_on_screen(inner_border, prjMat, zoom)
-        if on_screen:
-            # Draw the border hull
-            glColor3f(0, 0, 0)
-            glBegin(GL_POLYGON)
-            for vertex in inner_border:
-                glVertex3f(*vertex)
-            glEnd()
+        colors = [(0, 0, 0), board_color, (0, 0, 0)]
+        for width, color in zip(border_widths, colors):
+            border = scale_hull(hull, hull_center, width)
+            draw_border(border, color)
 
     def draw_board(self, imgs, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
         prjMat = (GLfloat * 16)()
         glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
 
-        if highlight_tiles == None:
+        if not highlight_tiles:
             highlight_tiles = []
 
-        highlight_color=(1.0, 1.0, 0.0)
-        selected_color=(1.0, 0.0, 0.0)
-        hover_color=(0.0, 1.0, 1.0)
-        hover_highlight_color=(0.0, 1.0, 0.0)
-        if selected_tile != '':
-            tile_selected = [selected_tile]
-        else:
-            tile_selected = []
-        if hover_tile != '':
-            tile_hover = [hover_tile]
-        else:
-            tile_hover = []
+        colors = {
+            'highlight': (1.0, 1.0, 0.0),
+            'selected': (1.0, 0.0, 0.0),
+            'hover': (0.0, 1.0, 1.0),
+            'hover_highlight': (0.0, 1.0, 0.0),
+        }
 
         square_size = 1 / 10
         polygons = dict()
 
-        # Draw the checkerboard
         for position, node in self.board.nodes.items():
+            polygon, texture_quad = ([(vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in node_attr] for node_attr in (node.render_polygon, node.texture_quad))
 
-            code_position = position
-            polygon = node.render_polygon
-            texture_quad = node.texture_quad
-
-            polygon = tuple((vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in polygon)
-            texture_quad = tuple((vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in texture_quad)
-
-            on_screen = GraphRenderEngine.is_on_screen(polygon, prjMat, zoom)
-            if not on_screen:
+            if not GraphRenderEngine.is_on_screen(polygon, prjMat, zoom):
                 continue
-            polygons[code_position] = polygon
 
+            polygons[position] = polygon
             tile = node.tile
-            if tile == None:
+
+            if tile is None:
                 continue
 
             color = tile.tint
 
-            if code_position in highlight_tiles and code_position in tile_hover:
-                color = ((color[0] + hover_highlight_color[0])/2, (color[1] + hover_highlight_color[1])/2, (color[2] + hover_highlight_color[2])/2)
-            elif code_position in highlight_tiles:
-                color = ((color[0] + highlight_color[0])/2, (color[1] + highlight_color[1])/2, (color[2] + highlight_color[2])/2)
-            elif code_position in tile_selected:
-                color = ((color[0] + selected_color[0])/2, (color[1] + selected_color[1])/2, (color[2] + selected_color[2])/2)
-            elif code_position in tile_hover:
-                color = ((color[0] + hover_color[0])/2, (color[1] + hover_color[1])/2, (color[2] + hover_color[2])/2)
+            for key, c in colors.items():
+                if position in (highlight_tiles if key == 'highlight' else [selected_tile] if key == 'selected' else [hover_tile]):
+                    color = ((color[0] + c[0]) / 2, (color[1] + c[1]) / 2, (color[2] + c[2]) / 2)
+                    break
 
             glBegin(GL_POLYGON)
             glColor3fv(color)
@@ -165,11 +127,11 @@ class GraphRenderEngine(AbstractRenderEngine):
                 glVertex3fv(vertex)
             glEnd()
 
-            if tile.texture != None: 
+            if tile.texture is not None:
                 texture_id = imgs[tile.texture]
                 glColor3fv((1.0, 1.0, 1.0))
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glEnable(GL_BLEND)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
                 glBindTexture(GL_TEXTURE_2D, texture_id)
 
                 glEnable(GL_TEXTURE_2D)
@@ -180,7 +142,7 @@ class GraphRenderEngine(AbstractRenderEngine):
                 glEnd()
                 glDisable(GL_TEXTURE_2D)
                 glBindTexture(GL_TEXTURE_2D, 0)
-        
+
         return polygons
 
     def draw_pieces(self, imgs, zoom, pos):
@@ -190,81 +152,37 @@ class GraphRenderEngine(AbstractRenderEngine):
 
         square_size = 1 / 10
         for position, node in self.board.nodes.items():
-            
-            texture_quad = node.texture_quad
-            texture_quad = tuple((vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in texture_quad)
 
-            on_screen = GraphRenderEngine.is_on_screen(texture_quad, prjMat, zoom)
-            if not on_screen:
+            texture_quad = [(vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in node.texture_quad]
+
+            if not GraphRenderEngine.is_on_screen(texture_quad, prjMat, zoom):
                 continue
-            
-            piece_colors = [
-                (1.0, 1.0, 1.0),
-                (1.0, 1.0, 1.0),
-                (1.0, 1.0, 1.0),
-                (1.0, 1.0, 1.0)
-            ]
+
             piece = node.tile.piece
-            if piece == None:
-                continue
-            elif piece.name == 'empty' or piece.name == None:
-                continue
-            else:
-                if piece.team == 'black':
-                    texture_id = imgs['black'][piece.name]
-                else:
-                    texture_id = imgs['white'][piece.name]
-                if piece.team in ['white', 'black']:
-                    piece_colors[0] = (1.0, 1.0, 1.0)
-                else:
-                    piece_colors[0] = self.rule_engine.teams[piece.team].color
+            if piece and piece.name not in [None, 'empty']:
+                file_name = 'black' if piece.team == 'black' else 'white'
+                texture_id = imgs[file_name][piece.name]
+                piece_colors = [self.rule_engine.teams[piece.team].color]
 
-                if piece.secondary_team == 'black':
-                    if piece.team == 'black':
-                        piece_colors[1] = (1.0, 1.0, 1.0)
-                    else:
-                        piece_colors[1] = (0.0, 0.0, 0.0)
-                elif piece.secondary_team == 'white':
-                    piece_colors[1] = (1.0, 1.0, 1.0)
-                else:
-                    piece_colors[1] = self.rule_engine.teams[piece.secondary_team].color
+                for team_attr in ('secondary_team', 'trinary_team', 'quadinary_team'):
+                    team = getattr(piece, team_attr)
+                    color = (1.0, 1.0, 1.0) if team in ('white', 'black') else self.rule_engine.teams[team].color
+                    piece_colors.append(color)
 
-                if piece.trinary_team == 'black':
-                    if piece.team == 'black':
-                        piece_colors[2] = (1.0, 1.0, 1.0)
-                    else:
-                        piece_colors[2] = (0.0, 0.0, 0.0)
-                elif piece.trinary_team == 'white':
-                    piece_colors[2] = (1.0, 1.0, 1.0)
-                else:
-                    piece_colors[2] = self.rule_engine.teams[piece.trinary_team].color
+                glEnable(GL_BLEND)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glBindTexture(GL_TEXTURE_2D, texture_id)
 
-                if piece.quadinary_team == 'black':
-                    if piece.team == 'black':
-                        piece_colors[3] = (1.0, 1.0, 1.0)
-                    else:
-                        piece_colors[3] = (0.0, 0.0, 0.0)
-                elif piece.secondary_team == 'white':
-                    piece_colors[3] = (1.0, 1.0, 1.0)
-                else:
-                    piece_colors[3] = self.rule_engine.teams[piece.quadinary_team].color
+                glEnable(GL_TEXTURE_2D)
+                glBegin(GL_QUADS)
+                for vertex, uv_vertex, color in zip(texture_quad, self.uv_quad, piece_colors):
+                    glColor3fv(color)
+                    glTexCoord2f(*uv_vertex)
+                    glVertex3fv(vertex)
+                glEnd()
+                glDisable(GL_TEXTURE_2D)
 
-            piece_colors = [piece_colors[0], piece_colors[2], piece_colors[1], piece_colors[3]]
-
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glBindTexture(GL_TEXTURE_2D, texture_id)
-
-            glEnable(GL_TEXTURE_2D)
-            glBegin(GL_QUADS)
-            for vertex, uv_vertex, color in zip(texture_quad, self.uv_quad, piece_colors):
-                glColor3fv(color)
-                glTexCoord2f(*uv_vertex)
-                glVertex3fv(vertex)
-            glEnd()
-            glDisable(GL_TEXTURE_2D)
-
-            glBindTexture(GL_TEXTURE_2D, 0)
+                glBindTexture(GL_TEXTURE_2D, 0)
 
     def store_imgs(self):
         piece_textures = dict()
@@ -313,6 +231,16 @@ class GraphRenderEngine(AbstractRenderEngine):
         glBindTexture(GL_TEXTURE_2D, 0)
 
         return texture_id
+
+    def save(self, name, file_path = 'saves'):
+        path = f"{file_path}/{name}.chess"
+        try:
+            with open(path, 'xb') as f:
+                pickle.dump(self, f)
+        except:
+            with open(path, 'wb') as f:
+                pickle.dump(self, f)
+        print(f'{name} Game Saved')
 
     def initialize(self, screen_size, zoom=1.0, ai_teams=None, ai_turn_delay=15):
 
@@ -370,7 +298,6 @@ class GraphRenderEngine(AbstractRenderEngine):
         self.column_minmax = (column_min, column_max)
 
         self.center = ((row_max + row_min) / 2, (column_max + column_min) / 2)
-
 
         self.rows = row_max - row_min
         self.columns = column_max - column_min
@@ -445,7 +372,7 @@ class GraphRenderEngine(AbstractRenderEngine):
                 default_save_name = now.strftime("%Y-%m-%d_%H-%M-%S")
                 save_file_name = GraphRenderEngine.get_save_file_name(default_save_name)
                 if save_file_name:
-                    Variants.save(save_file_name, self, 'saves')
+                    self.save(save_file_name, 'saves')
                     saved = True
             if keys[pygame.K_ESCAPE]:
                 pygame.quit()
@@ -466,26 +393,28 @@ class GraphRenderEngine(AbstractRenderEngine):
 
             current_team = self.rule_engine.turn_order[self.board.current_team_index]
 
-            if self.rule_engine.lose[current_team] == 'eliminate_royals' and not self.board.royal_tiles[current_team]:
-                self.rule_engine.turn_order.remove(current_team)
-                print(f"all of {current_team}'s royal pieces were eliminated")
-                self.board.current_team_index = self.board.current_team_index % len(self.rule_engine.turn_order)
+            lose_condition = self.rule_engine.lose[current_team]
+            royal_tiles_count = len(self.board.royal_tiles[current_team])
 
-            elif self.rule_engine.lose[current_team] == 'eliminate_any_royal' and len(self.board.royal_tiles[current_team]) < self.team_royal_numbers[current_team]:
-                self.rule_engine.turn_order.remove(current_team)
-                print(f"one of {current_team}'s royal pieces was eliminated")
-                self.board.current_team_index = self.board.current_team_index % len(self.rule_engine.turn_order)
+            if lose_condition == 'eliminate_royals' and not royal_tiles_count:
+                msg = f"all of {current_team}'s royal pieces were eliminated"
+            elif lose_condition == 'eliminate_any_royal' and royal_tiles_count < self.team_royal_numbers[current_team]:
+                msg = f"one of {current_team}'s royal pieces was eliminated"
+            elif not self.board.get_team_pieces(current_team):
+                msg = f"all of {current_team}'s pieces were eliminated"
+            else:
+                msg = None
 
-            if not self.board.get_team_pieces(current_team):
+            if msg != None:
                 self.rule_engine.turn_order.remove(current_team)
-                print(f"all of {current_team}'s pieces were eliminated")
-                self.board.current_team_index = self.board.current_team_index % len(self.rule_engine.turn_order)
+                print(msg)
+                self.board.current_team_index %= len(self.rule_engine.turn_order)
 
-            # if self.board.current_team in self.ai_teams and frame % self.ai_turn_delay == 0 and len(self.rule_engine.turn_order) > 1:
-            #     if self.board.current_team == self.rule_engine.turn_order[-1]:
-            #         turn += 1
-            #     self.board = self.rule_engine.ai_play(self.board, False, self.ai_teams[self.board.current_team])
-            #     saved = False
+            if current_team in self.ai_teams and frame % self.ai_turn_delay == 0 and len(self.rule_engine.turn_order) > 1:
+                if self.board.current_team_index == len(self.rule_engine.turn_order) - 1:
+                    turn += 1
+                self.board = self.rule_engine.ai_play(self.board, self.ai_teams[current_team], False)
+                saved = False
 
             prjMat = (GLfloat * 16)()
             glGetFloatv(GL_PROJECTION_MATRIX, prjMat)

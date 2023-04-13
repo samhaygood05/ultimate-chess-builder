@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
+import random
 from graph_board import GraphBoard
 from movement import RuleSet, RulePresets as rp
 from typing import List, Dict, Any
@@ -129,11 +130,44 @@ class GraphRuleEngine:
     
     def get_all_legal_moves(self, team, board: GraphBoard, check=False):
         legal_moves = []
-        for position in board.nodes.keys():
-            if board.get_node_piece(position) != None and team in board.get_node_piece(position).get_team_names():
-                legal_moves.extend(self.get_legal_moves(position, board, check))
-
+        for position in board.get_team_pieces(team):
+            legal_moves_pos = self.get_legal_moves(position, board, check)
+            for move in legal_moves_pos:
+                legal_moves.append((position, move[0]))
         return legal_moves
+
+    def get_move_score(self, board: GraphBoard, start_pos, end_pos):
+        scores = dict()
+        for team in self.teams.keys():
+            scores[team] = 0
+        
+        if start_pos == end_pos:
+            return scores
+        
+        if board.get_node_piece(start_pos) != None:
+            start_tile_point = self.rulesets[board.get_node_piece(start_pos).name].points
+            start_tile_teams = board.get_piece_teams(start_pos)
+        else:
+            start_tile_point = 0
+            start_tile_teams = []
+
+        if board.get_node_piece(end_pos) != None:
+            end_tile_point = self.rulesets[board.get_node_piece(end_pos).name].points
+            end_tile_teams = board.get_piece_teams(end_pos)
+        else:
+            end_tile_point = 0
+            end_tile_teams = []
+
+        for team in end_tile_teams:
+            scores[team] -= end_tile_point
+
+        if board.get_node_piece(start_pos) != None:
+            for team in start_tile_teams:
+                if self.rulesets[board.get_node_piece(start_pos).name].promotion != None and end_pos in self.promotion_tiles[team]:
+                    promotion_points = self.rulesets[self.rulesets[board.get_node_piece(end_pos).name].promotion].points
+                    scores[team] += promotion_points - start_tile_point
+
+        return scores
 
     def play_move(self, board: GraphBoard, start_pos, end_pos, illegal_moves=False, check=True) -> GraphBoard:
         if board.get_node_piece(start_pos) == None:
@@ -173,4 +207,107 @@ class GraphRuleEngine:
 
         new_board.current_team_index = (new_board.current_team_index + 1) % len(self.turn_order)
 
+        return new_board
+    
+    def ai_play(self, board: GraphBoard, ai_type = 'random', check=False, return_move_score=False):
+        start_board = board
+        new_board = board
+        ai_start_pos, ai_end_pos = ((0, 0), (0, 0))
+        team = self.turn_order[board.current_team_index]
+        if ai_type == 'random':
+            ai_legal_moves = self.get_all_legal_moves(team, board, check)
+            if ai_legal_moves:
+                ai_start_pos, ai_end_pos = random.choice(ai_legal_moves)
+                new_board = self.play_move(board, ai_start_pos, ai_end_pos, check=check)
+        elif ai_type[:6] == 'minmax':
+            mode = ai_type.split('-')[0].split('_')[1:]
+            if not len(mode):
+                mode.append('')
+            strength = int(ai_type.split('-')[1])
+            try:
+                opponent_strength = int(ai_type.split('-')[2])
+            except:
+                opponent_strength = 0
+            opponent_strength = min(opponent_strength, strength - 1)
+            opponent_strength = max(opponent_strength, 0)
+            ai_legal_moves = self.get_all_legal_moves(team, board, check)
+            max_scoring_move = None
+            scores = []
+            if strength == 0 and ai_legal_moves:
+                for ai_start_pos, ai_end_pos in ai_legal_moves:
+                    team_points = self.get_move_score(board, ai_start_pos, ai_end_pos)
+                    maximize = 0
+                    for t in team_points:
+                        if t not in self.turn_order:
+                            continue
+                        elif t in self.teams[team].allies:
+                            maximize += team_points[t]
+                        else:
+                            maximize -= team_points[t]
+                    scores += [maximize]
+                    if max_scoring_move == None:
+                        max_scoring_move = maximize
+                    else:
+                        max_scoring_move = max(max_scoring_move, maximize)
+
+                filtered_moves = [ai_legal_moves[i] for i in range(len(ai_legal_moves)) if scores[i] == max_scoring_move]
+                if filtered_moves:
+                    ai_start_pos, ai_end_pos = random.choice(filtered_moves)
+                    new_board = self.play_move(board, ai_start_pos, ai_end_pos, check=check)
+            
+            elif ai_legal_moves:
+                for ai_start_pos, ai_end_pos in ai_legal_moves:
+                    skip_move = False
+                    maximize = 0
+                    accumulated_scores = self.get_move_score(new_board, ai_start_pos, ai_end_pos)
+                    try:
+                        if mode[1] == 'smart' and accumulated_scores[board.current_team] == -900:
+                            scores += -99999
+                            continue
+                        elif mode[1] == 'smart' and -900 in accumulated_scores.values():
+                            scores += 99999
+                            continue
+                    except:
+                        pass
+                    copy_board = self.play_move(board.copy(), ai_start_pos, ai_end_pos, check=check)
+                    for i in range(strength):
+                        copy_board, turn_score = self.ai_play(copy_board.copy(), f'{ai_type.split("-"[0])}-{opponent_strength}-{opponent_strength-1}', check, True)
+                        try:
+                            if mode[1] == 'smart' and turn_score[board.current_team] == -900:
+                                skip_move = True
+                                break
+                        except:
+                            pass
+                        strength_factor = 1
+                        try:
+                            if mode[0] == 'sib': # Sooner is Better
+                                strength_factor = max(0, min(1, 1/(1 + (i+1)//len(self.turn_order))))
+                            elif mode[0] == 'lib': # Later is Better
+                                strength_factor = max(0, min(1, 1 - 1/(1 + (i+1)//len(self.turn_order))))
+                        except:
+                            pass
+                        for t in accumulated_scores:
+                            accumulated_scores[t] += turn_score[t] * strength_factor
+                    if skip_move:
+                        scores += -99999
+                        continue
+                    for t in accumulated_scores:
+                        if t not in self.turn_order:
+                            continue
+                        elif t in self.teams[team].allies:
+                             maximize += accumulated_scores[t]
+                        else:
+                            maximize -= accumulated_scores[t]
+                    scores += [maximize]
+                    if max_scoring_move == None:
+                        max_scoring_move = maximize
+                    else:
+                        max_scoring_move = max(maximize, max_scoring_move)
+                    filtered_moves = [ai_legal_moves[i] for i in range(len(scores)) if scores[i] == max_scoring_move]
+                if filtered_moves:
+                    ai_start_pos, ai_end_pos = random.choice(filtered_moves)
+                    new_board = self.play_move(board, ai_start_pos, ai_end_pos, check=check)
+
+        if return_move_score:
+            return new_board, self.get_move_score(start_board, ai_start_pos, ai_end_pos)
         return new_board
