@@ -164,7 +164,7 @@ class GraphRuleEngine:
         if board.get_node_piece(start_pos) != None:
             for team in start_tile_teams:
                 if self.rulesets[board.get_node_piece(start_pos).name].promotion != None and end_pos in self.promotion_tiles[team]:
-                    promotion_points = self.rulesets[self.rulesets[board.get_node_piece(end_pos).name].promotion].points
+                    promotion_points = self.rulesets[self.rulesets[board.get_node_piece(start_pos).name].promotion].points
                     scores[team] += promotion_points - start_tile_point
 
         return scores

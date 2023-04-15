@@ -107,67 +107,65 @@ class GraphBoard:
         return self.nodes[position]
     
     def init_hull(self):
-        points = []
+        points_set = []
         for node in self.nodes.values():
             polygon = node.render_polygon
             for vertex in polygon:
-                points.append(vertex)
-        
-        def left_index(points):
-            left_most_index = 0
-            for i in range(1, len(points)):
-                if points[i][0] < points[left_most_index][0]:
-                    left_most_index = i
-            return left_most_index
+                points_set.append(vertex)
+
+        points = list(set(points_set))
 
         def polygon_centroid(vertices):
             area = 0
             x_sum = 0
             y_sum = 0
+            z_min = None
             for i in range(len(vertices)):
                 j = (i + 1) % len(vertices)
                 cross_product = vertices[i][0] * vertices[j][1] - vertices[j][0] * vertices[i][1]
                 area += cross_product
                 x_sum += (vertices[i][0] + vertices[j][0]) * cross_product
                 y_sum += (vertices[i][1] + vertices[j][1]) * cross_product
+                if z_min == None:
+                    z_min = vertices[i][2]
+                else:
+                    z_min = min(z_min, vertices[i][2])
 
             area *= 0.5
             x_centroid = x_sum / (6 * area)
             y_centroid = y_sum / (6 * area)
 
-            return (x_centroid, y_centroid)
-        
+            return (x_centroid, y_centroid, z_min)
+
         def orientation(p, q, r):
-            val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
-            if val == 0:
-                return 0  # collinear
-            return 1 if val > 0 else 2  # clockwise or counterclockwise
+            return (r[1] - p[1]) * (q[0] - p[0]) - (r[0] - p[0]) * (q[1] - p[1])
 
-        n = len(points)
-        if n < 3:
-            return [], None
+        def quickhull(points):
+            if len(points) <= 1:
+                return points
 
-        hull = []
+            def partition(points, a, b):
+                return [p for p in points if orientation(a, b, p) > 0]
 
-        l = left_index(points)
-        p = l
-        q = None
-        while True:
-            hull.append(points[p])
-            q = (p + 1) % n
+            def extend_hull(points, a, b):
+                if not points:
+                    return [b]
 
-            for i in range(n):
-                if orientation(points[p], points[i], points[q]) == 2:
-                    q = i
+                c = max(points, key=lambda p: orientation(a, b, p))
+                p1, p2 = partition(points, a, c), partition(points, c, b)
+                return extend_hull(p1, a, c) + extend_hull(p2, c, b)
 
-            p = q
-            if p == l:
-                break
+            a = min(points, key=lambda p: p[0])
+            b = max(points, key=lambda p: p[0])
+            p1, p2 = partition(points, a, b), partition(points, b, a)
+            return [a] + extend_hull(p1, a, b) + [b] + extend_hull(p2, b, a)
 
+        hull = quickhull(points)
         hull_tuple = tuple(hull)
         center = polygon_centroid(hull)
 
         return (hull_tuple, center)
+
 
     def copy(self):
         new_board = GraphBoard(self.adjacency_graphs.keys(), self.directions, self.current_team_index)
@@ -253,17 +251,40 @@ class GraphBoard:
         if texture_quad != None:
             self.nodes[position].texture_quad = texture_quad
         elif render_polygon != None:
-            center = (
-                sum(vertex[0] for vertex in render_polygon)/len(render_polygon), 
-                sum(vertex[1] for vertex in render_polygon)/len(render_polygon), 
-                sum(vertex[2] for vertex in render_polygon)/len(render_polygon)
-            )
+            def polygon_centroid(vertices):
+                area = 0
+                x_sum = 0
+                y_sum = 0
+                z_min = min(vertex[2] for vertex in vertices)
+                for i in range(len(vertices)):
+                    j = (i + 1) % len(vertices)
+                    cross_product = vertices[i][0] * vertices[j][1] - vertices[j][0] * vertices[i][1]
+                    area += cross_product
+                    x_sum += (vertices[i][0] + vertices[j][0]) * cross_product
+                    y_sum += (vertices[i][1] + vertices[j][1]) * cross_product
+
+                area *= 0.5
+                x_centroid = x_sum / (6 * area)
+                y_centroid = y_sum / (6 * area)
+
+                return (x_centroid, y_centroid, z_min)
+            center = polygon_centroid(render_polygon)
             self.nodes[position].texture_quad = (
                 (center[0] - 1/2, center[1] - 1/2, center[2]),
                 (center[0] + 1/2, center[1] - 1/2, center[2]),
                 (center[0] + 1/2, center[1] + 1/2, center[2]),
                 (center[0] - 1/2, center[1] + 1/2, center[2])
             )
+
+    def clear_node_rendering(self):
+        for position in self.nodes.keys():
+            quad = (
+                (position[1] - 1/2, -position[0] - 1/2, 0), 
+                (position[1] + 1/2, -position[0] - 1/2, 0),
+                (position[1] + 1/2, -position[0] + 1/2, 0),
+                (position[1] - 1/2, -position[0] + 1/2, 0)
+            )
+            self.set_node_rendering(position, quad)
 
     def __str__(self) -> str:
         return f'GraphBoard({self.nodes}, {self.edges})'

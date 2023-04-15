@@ -15,6 +15,7 @@ limitations under the License.
 '''
 
 from datetime import datetime
+import math
 from graph_board import GraphBoard, GraphPresets as gp
 from rule_engines import GraphRuleEngine
 from render_engines import AbstractRenderEngine
@@ -30,7 +31,7 @@ import pickle
 class GraphRenderEngine(AbstractRenderEngine):
     def __init__(self, board: GraphBoard = None, rule_engine: GraphRuleEngine = None, illegal_moves=False):
         if board == None:
-            self.board = gp.create_standard_board()
+            self.board = gp.standard_board()
         else:
             self.board = board
         if rule_engine == None:
@@ -46,8 +47,10 @@ class GraphRenderEngine(AbstractRenderEngine):
         copy_engine = GraphRenderEngine(board=self.board.copy(), rule_engine=self.rule_engine.copy(), illegal_moves=self.illegal_moves)
         return copy_engine
 
-    def get_board_color(self, current_team): 
-        if current_team == 'white':
+    def get_board_color(self, current_team):
+        if current_team == None:
+            return 0.0, 0.0, 0.0
+        elif current_team == 'white':
             return 0.8, 0.8, 0.8
         elif current_team == 'black':
             return 0.3, 0.3, 0.3
@@ -56,10 +59,13 @@ class GraphRenderEngine(AbstractRenderEngine):
             return colorsys.hsv_to_rgb(team_color_hsv[0], 0.5 * team_color_hsv[1], 0.7 if team_color_hsv[2] == 1.0 else team_color_hsv[2])
 
     def draw_boarder(self, zoom, x=0, y=0, z=0):
-        prjMat = (GLfloat * 16)()
-        glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
+        mvMat = glGetDoublev(GL_MODELVIEW_MATRIX)
+        prjMat = glGetDoublev(GL_PROJECTION_MATRIX)
 
-        current_team = self.rule_engine.turn_order[self.board.current_team_index]
+        if self.rule_engine.turn_order:
+            current_team = self.rule_engine.turn_order[self.board.current_team_index]
+        else:
+            current_team = None
         board_color = self.get_board_color(current_team)
 
         square_size = 1 / 10
@@ -68,11 +74,11 @@ class GraphRenderEngine(AbstractRenderEngine):
         hull, hull_center = self.hull
 
         def scale_hull(hull, center, scale):
-            return [(x + (vx - center[0]) * scale * square_size, y + (vy - center[1]) * scale * square_size, z+vz)
+            return [(x + ((vx - center[0]) * scale + center[0]) * square_size, y + ((vy - center[1]) * scale + center[1]) * square_size, z+vz)
                     for vx, vy, vz in hull]
 
         def draw_border(border, color):
-            on_screen = GraphRenderEngine.is_on_screen(border, prjMat, zoom)
+            on_screen = GraphRenderEngine.is_on_screen(border, mvMat, prjMat, zoom)
             if on_screen:
                 glColor3f(*color)
                 glBegin(GL_POLYGON)
@@ -86,8 +92,9 @@ class GraphRenderEngine(AbstractRenderEngine):
             draw_border(border, color)
 
     def draw_board(self, imgs, zoom, highlight_tiles=None, selected_tile='', hover_tile='', x=0, y=0, z=0):
-        prjMat = (GLfloat * 16)()
-        glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
+        
+        mvMat = glGetDoublev(GL_MODELVIEW_MATRIX)
+        prjMat = glGetDoublev(GL_PROJECTION_MATRIX)
 
         if not highlight_tiles:
             highlight_tiles = []
@@ -105,7 +112,7 @@ class GraphRenderEngine(AbstractRenderEngine):
         for position, node in self.board.nodes.items():
             polygon, texture_quad = ([(vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in node_attr] for node_attr in (node.render_polygon, node.texture_quad))
 
-            if not GraphRenderEngine.is_on_screen(polygon, prjMat, zoom):
+            if not GraphRenderEngine.is_on_screen(polygon, mvMat, prjMat, zoom):
                 continue
 
             polygons[position] = polygon
@@ -145,28 +152,56 @@ class GraphRenderEngine(AbstractRenderEngine):
 
         return polygons
 
-    def draw_pieces(self, imgs, zoom, pos):
-        prjMat = (GLfloat * 16)()
-        glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
+    def draw_pieces(self, imgs, zoom, pos=(0.0, 0.0, 0.0), angle=0):
+        mvMat = glGetDoublev(GL_MODELVIEW_MATRIX)
+        prjMat = glGetDoublev(GL_PROJECTION_MATRIX)
         x, y, z = pos
+
+        angle = math.radians(-angle)
+        cos = math.cos(angle)
+        sin = math.sin(angle)
+
+        def polygon_centroid(vertices):
+            area = 0
+            x_sum = 0
+            y_sum = 0
+            z_min = min(vertex[2] for vertex in vertices)
+            for i in range(len(vertices)):
+                j = (i + 1) % len(vertices)
+                cross_product = vertices[i][0] * vertices[j][1] - vertices[j][0] * vertices[i][1]
+                area += cross_product
+                x_sum += (vertices[i][0] + vertices[j][0]) * cross_product
+                y_sum += (vertices[i][1] + vertices[j][1]) * cross_product
+
+            area *= 0.5
+            x_centroid = x_sum / (6 * area)
+            y_centroid = y_sum / (6 * area)
+
+            return (x_centroid, y_centroid, z_min)
 
         square_size = 1 / 10
         for position, node in self.board.nodes.items():
 
-            texture_quad = [(vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in node.texture_quad]
 
-            if not GraphRenderEngine.is_on_screen(texture_quad, prjMat, zoom):
+            texture_quad = [(vertex[0] * square_size + x, vertex[1] * square_size + y, vertex[2] * square_size + z) for vertex in node.texture_quad]
+            center = polygon_centroid(texture_quad)
+            centered_quad = [[vertex[i] - center[i] for i in range(3)] for vertex in texture_quad]
+            rotated_quad = [[vertex[0]*cos - vertex[1]*sin, vertex[0]*sin + vertex[1]*cos, vertex[2]] for vertex in centered_quad]
+            texture_quad = [[vertex[i] + center[i] for i in range(3)] for vertex in rotated_quad]
+
+            if not GraphRenderEngine.is_on_screen(texture_quad, mvMat, prjMat, zoom):
                 continue
 
             piece = node.tile.piece
             if piece and piece.name not in [None, 'empty']:
                 file_name = 'black' if piece.team == 'black' else 'white'
                 texture_id = imgs[file_name][piece.name]
+                piece_colors = (1.0, 1.0, 1.0) if piece.team in ('white', 'black') else self.rule_engine.teams[piece.team].color
                 piece_colors = [self.rule_engine.teams[piece.team].color]
 
-                for team_attr in ('secondary_team', 'trinary_team', 'quadinary_team'):
+                for team_attr in ('trinary_team', 'secondary_team', 'quadinary_team'):
                     team = getattr(piece, team_attr)
-                    color = (1.0, 1.0, 1.0) if team in ('white', 'black') else self.rule_engine.teams[team].color
+                    color = self.rule_engine.teams[team].color
                     piece_colors.append(color)
 
                 glEnable(GL_BLEND)
@@ -233,7 +268,7 @@ class GraphRenderEngine(AbstractRenderEngine):
         return texture_id
 
     def save(self, name, file_path = 'saves'):
-        path = f"{file_path}/{name}.chess"
+        path = f"saved/{file_path}/{name}.ucbgame"
         try:
             with open(path, 'xb') as f:
                 pickle.dump(self, f)
@@ -270,42 +305,12 @@ class GraphRenderEngine(AbstractRenderEngine):
             (1.0, 1.0),
             (0.0, 1.0)
         )
-
-        row_min = None
-        row_max = None
-        column_min = None
-        column_max = None
-        for node_position, node in self.board.nodes.items():
-            for node_col, node_row, _ in node.render_polygon:
-                if row_min == None:
-                    row_min = node_row
-                else:
-                    row_min = min(row_min, node_row)
-                if row_max == None:
-                    row_max = node_row
-                else:
-                    row_max = max(row_max, node_row)
-                if column_min == None:
-                    column_min = node_col
-                else:
-                    column_min = min(column_min, node_col)
-                if column_max == None:
-                    column_max = node_col
-                else:
-                    column_max = max(column_max, node_col)
-
-        self.row_minmax = (row_min, row_max)
-        self.column_minmax = (column_min, column_max)
-
-        self.center = ((row_max + row_min) / 2, (column_max + column_min) / 2)
-
-        self.rows = row_max - row_min
-        self.columns = column_max - column_min
+        
+        self.camera_pos = [-self.hull[1][0] / 10, -self.hull[1][1] / 10, 0.5]
 
         gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
         glRotatef(180, 1, 0, 0)
         glRotatef(self.angle, 0, 0, 1)
-        self.camera_pos = [-(self.center[1]) / 10, -(self.center[0]) / 10, 0.5]
         
         self.store_imgs()
 
@@ -326,7 +331,7 @@ class GraphRenderEngine(AbstractRenderEngine):
             gluOrtho2D(-self.zoom, self.zoom, -self.zoom/self.screen_ratio, self.zoom/self.screen_ratio)
             glRotatef(180, 1, 0, 0)
             glRotatef(self.angle, 0, 0, 1)
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -337,11 +342,12 @@ class GraphRenderEngine(AbstractRenderEngine):
                         print('selected', hover_tile)
                         if selected_tile == '':
                             selected_tile = hover_tile
-                        else:
-                            if self.board.current_team_index == len(self.rule_engine.turn_order) - 1:
-                                turn += 1
+                        elif self.rule_engine.turn_order:
+                            self.board.current_team_index %= len(self.rule_engine.turn_order)
                             self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves, False)
                             saved = False
+                            selected_tile = ''
+                        else:
                             selected_tile = ''
                     elif event.button == 3:
                         selected_tile = ''
@@ -351,22 +357,28 @@ class GraphRenderEngine(AbstractRenderEngine):
                         self.zoom += self.zoom
 
             keys = pygame.key.get_pressed()
+            angle_rad = math.radians(self.angle)
+            cos = math.cos(angle_rad)
+            sin = math.sin(angle_rad)
+            rcamera = [self.camera_pos[0]*cos - self.camera_pos[1]*sin, self.camera_pos[0]*sin + self.camera_pos[1]*cos, self.camera_pos[2]]
             if keys[pygame.K_w] or keys[pygame.K_UP]:
-                self.camera_pos[1] += 0.3 * self.zoom / 5
+                rcamera[1] += 0.3 * self.zoom / 5
             if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_LCTRL] or keys[pygame.K_LMETA]):
-                self.camera_pos[1] -= 0.3 * self.zoom / 5
+                rcamera[1] -= 0.3 * self.zoom / 5
             if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                self.camera_pos[0] += 0.3 * self.zoom / 5
+                rcamera[0] += 0.3 * self.zoom / 5
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                self.camera_pos[0] -= 0.3 * self.zoom / 5
+                rcamera[0] -= 0.3 * self.zoom / 5
             if keys[pygame.K_x] and self.zoom > 0.2:
                 self.zoom -= self.zoom / 20
             if keys[pygame.K_z]:
                 self.zoom += self.zoom / 20
             if keys[pygame.K_q]:
-                self.angle -= 1
-            if keys[pygame.K_e]:
                 self.angle += 1
+            if keys[pygame.K_e]:
+                self.angle -= 1
+            if keys[pygame.K_r]:
+                self.angle = 0
             if keys[pygame.K_s] and (keys[pygame.K_LCTRL] or keys[pygame.K_LMETA]) and not saved:
                 now = datetime.now()
                 default_save_name = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -378,6 +390,8 @@ class GraphRenderEngine(AbstractRenderEngine):
                 pygame.quit()
                 return self.rule_engine.turn_order[0], turn
 
+            self.camera_pos = [rcamera[0]*cos + rcamera[1]*sin, -rcamera[0]*sin + rcamera[1]*cos, rcamera[2]]
+
             if selected_tile != '':
                 highlight_tiles = [move[0] for move in self.rule_engine.get_legal_moves(selected_tile, self.board)]
             elif hover_tile != '':
@@ -385,30 +399,45 @@ class GraphRenderEngine(AbstractRenderEngine):
             else: 
                 highlight_tiles = []
 
-            glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
+            if len(self.rule_engine.turn_order) > 1:
+                glClearColor(0.7, 0.8, 0.9, 1.0) # light blue-gray
+            elif len(self.rule_engine.turn_order) == 1:
+                team_color = self.rule_engine.teams[self.rule_engine.turn_order[0]].color
+                tchsv = colorsys.rgb_to_hsv(*team_color)
+                team_color = colorsys.hsv_to_rgb(tchsv[0], tchsv[1]*0.25, 1 - (1 - tchsv[2])*0.5)
+                glClearColor(*team_color, 1.0)
+            else:
+                color = colorsys.rgb_to_hsv(0.7, 0.8, 0.9)
+                color = colorsys.hsv_to_rgb(color[0], 0.0, color[2])
+                glClearColor(*color, 1.0)
             self.draw_boarder(self.zoom, *self.camera_pos)
             quads = self.draw_board(self.tile_textures, self.zoom, highlight_tiles, selected_tile, hover_tile, *self.camera_pos)
-            self.draw_pieces(self.piece_textures, self.zoom, self.camera_pos)
+            self.draw_pieces(self.piece_textures, self.zoom, self.camera_pos, self.angle)
             pygame.display.flip()
 
-            current_team = self.rule_engine.turn_order[self.board.current_team_index]
-
-            lose_condition = self.rule_engine.lose[current_team]
-            royal_tiles_count = len(self.board.royal_tiles[current_team])
-
-            if lose_condition == 'eliminate_royals' and not royal_tiles_count:
-                msg = f"all of {current_team}'s royal pieces were eliminated"
-            elif lose_condition == 'eliminate_any_royal' and royal_tiles_count < self.team_royal_numbers[current_team]:
-                msg = f"one of {current_team}'s royal pieces was eliminated"
-            elif not self.board.get_team_pieces(current_team):
-                msg = f"all of {current_team}'s pieces were eliminated"
+            if self.rule_engine.turn_order:
+                current_team = self.rule_engine.turn_order[self.board.current_team_index]
             else:
-                msg = None
+                current_team = None
 
-            if msg != None:
-                self.rule_engine.turn_order.remove(current_team)
-                print(msg)
-                self.board.current_team_index %= len(self.rule_engine.turn_order)
+            if self.rule_engine.turn_order:
+                lose_condition = self.rule_engine.lose[current_team]
+                royal_tiles_count = len(self.board.royal_tiles[current_team])
+
+                if lose_condition == 'eliminate_royals' and not royal_tiles_count:
+                    msg = f"all of {current_team}'s royal pieces were eliminated"
+                elif lose_condition == 'eliminate_any_royal' and royal_tiles_count < self.team_royal_numbers[current_team]:
+                    msg = f"one of {current_team}'s royal pieces was eliminated"
+                elif not self.board.get_team_pieces(current_team):
+                    msg = f"all of {current_team}'s pieces were eliminated"
+                else:
+                    msg = None
+
+                if msg != None:
+                    self.rule_engine.turn_order.remove(current_team)
+                    print(msg)
+                    if self.rule_engine.turn_order:
+                        self.board.current_team_index %= len(self.rule_engine.turn_order)
 
             if current_team in self.ai_teams and frame % self.ai_turn_delay == 0 and len(self.rule_engine.turn_order) > 1:
                 if self.board.current_team_index == len(self.rule_engine.turn_order) - 1:
@@ -416,8 +445,8 @@ class GraphRenderEngine(AbstractRenderEngine):
                 self.board = self.rule_engine.ai_play(self.board, self.ai_teams[current_team], False)
                 saved = False
 
-            prjMat = (GLfloat * 16)()
-            glGetFloatv(GL_PROJECTION_MATRIX, prjMat)
+            mvMat = glGetDoublev(GL_MODELVIEW_MATRIX)
+            prjMat = glGetDoublev(GL_PROJECTION_MATRIX)
             
             mouse = pygame.mouse.get_pos()
 
@@ -428,7 +457,7 @@ class GraphRenderEngine(AbstractRenderEngine):
                             continue
                     except:
                         pass
-                    if GraphRenderEngine.TestRec(prjMat, mouse, self.display, self.zoom, quad):
+                    if GraphRenderEngine.TestRec(mvMat, prjMat, mouse, self.display, self.zoom, quad):
                         hover_tile = tile
                         break
                     else:

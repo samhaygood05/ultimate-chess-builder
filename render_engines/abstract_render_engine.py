@@ -15,7 +15,7 @@ limitations under the License.
 '''
 
 from abc import ABC, abstractmethod
-import math
+import numpy as np
 from PyQt5.QtWidgets import QApplication, QInputDialog
 
 
@@ -36,15 +36,24 @@ class AbstractRenderEngine(ABC):
     def main_loop(self):
         pass
 
-    def TransformVec3(vecA,mat44):
-        vecB = [0, 0, 0, 0]
-        for i0 in range(0, 4):
-            vecB[i0] = vecA[0] * mat44[0*4+i0] + vecA[1] * mat44[1*4+i0] + vecA[2] * mat44[2*4+i0] + mat44[3*4+i0]
-        return [vecB[0]/vecB[3], vecB[1]/vecB[3], vecB[2]/vecB[3]]
+    def TransformVec3(vertex, modelview_matrix, projection_matrix):
+        # Convert vertex to homogeneous coordinates
+        vertex = np.array([*vertex, 1.0])
+        
+        # Apply ModelView matrix
+        camera_space_vertex = np.dot(modelview_matrix, vertex)
+        
+        # Apply Projection matrix
+        ndc_vertex = np.dot(projection_matrix, camera_space_vertex)
+        
+        # Convert to non-homogeneous coordinates
+        ndc_vertex = ndc_vertex / ndc_vertex[3]
+        
+        return ndc_vertex[:3]
 
-    def TestRec(prjMat, mpos, display, zoom, polygon):
-        projected_polygon = [AbstractRenderEngine.TransformVec3(vertex, prjMat) for vertex in polygon]
-        ndc = [(2.0 * mpos[0]/display[0] - 1.0)*zoom, (2.0 * mpos[1]/display[0] - display[1]/display[0])*zoom]
+    def TestRec(mvMat, prjMat, mpos, display, zoom, polygon):
+        projected_polygon = [AbstractRenderEngine.TransformVec3(vertex, mvMat, prjMat) for vertex in polygon]
+        ndc = [(2.0 * mpos[0]/display[0] - 1.0), -(2.0 * mpos[1]/display[1] - 1.0)]
         return AbstractRenderEngine.point_inside_polygon(ndc, projected_polygon)
 
     def get_save_file_name(default_name):
@@ -53,7 +62,6 @@ class AbstractRenderEngine(ABC):
         if ok:
             return file_name or default_name
         return None
-
 
     def point_inside_polygon(point, polygon):
             n = len(polygon)
@@ -67,18 +75,18 @@ class AbstractRenderEngine(ABC):
                 p1 = p2
             return inside
 
-    def is_on_screen(polygon, prjMat, zoom):
+    def is_on_screen(polygon, mvMat, prjMat, zoom):
         def line_segments_intersect(a, b, c, d):
             def ccw(A, B, C):
                 return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
 
             return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
-        screen_bounds = [(-zoom, -zoom), (zoom, -zoom), (zoom, zoom), (-zoom, zoom)]
-        projected_polygon = [AbstractRenderEngine.TransformVec3(vertex, prjMat) for vertex in polygon]
+        screen_bounds = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
+        projected_polygon = [AbstractRenderEngine.TransformVec3(vertex, mvMat, prjMat) for vertex in polygon]
 
         for vertex in projected_polygon:
-            if -zoom <= vertex[0] <= zoom and -zoom <= vertex[1] <= zoom:
+            if -1.0 <= vertex[0] <= 1.0 and -1.0 <= vertex[1] <= 1.0:
                 return True
 
         for i in range(len(projected_polygon)):

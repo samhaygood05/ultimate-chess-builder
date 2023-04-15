@@ -18,10 +18,11 @@ from tile import Tile
 from piece import Piece
 import pickle
 import copy
+from render_engines import GraphRenderEngine
 
 class Variants:
     def save(name, render_engine, file_path = 'presets'):
-        path = f"{file_path}/{name}.chess"
+        path = f"saved/{file_path}/{name}.ucbgame"
         try:
             with open(path, 'xb') as f:
                 pickle.dump(render_engine, f)
@@ -30,8 +31,8 @@ class Variants:
                 pickle.dump(render_engine, f)
         print(f'{name} Preset Saved')
 
-    def load(name, file_path = 'presets'):
-        path = f"{file_path}/{name}.chess"
+    def load(name, file_path = 'presets') -> GraphRenderEngine:
+        path = f"saved/{file_path}/{name}.ucbgame"
         with open(path, 'rb') as f:
             preset = pickle.load(f)
         print(f'{name} Preset Loaded')

@@ -34,12 +34,29 @@ class TileNode:
         else:
             self.render_polygon = render_polygon
 
-        if texture_quad == None or len(texture_quad) != 4:
-            center = (
-                sum(polygon[0] for polygon in self.render_polygon)/len(self.render_polygon), 
-                sum(polygon[1] for polygon in self.render_polygon)/len(self.render_polygon), 
-                sum(polygon[2] for polygon in self.render_polygon)/len(self.render_polygon)
-            )
+        if texture_quad == None:
+            def polygon_centroid(vertices):
+                area = 0
+                x_sum = 0
+                y_sum = 0
+                z_min = None
+                for i in range(len(vertices)):
+                    j = (i + 1) % len(vertices)
+                    cross_product = vertices[i][0] * vertices[j][1] - vertices[j][0] * vertices[i][1]
+                    area += cross_product
+                    x_sum += (vertices[i][0] + vertices[j][0]) * cross_product
+                    y_sum += (vertices[i][1] + vertices[j][1]) * cross_product
+                    if z_min == None:
+                        z_min = vertices[i][2]
+                    else:
+                        z_min = min(vertices[i][2], z_min)
+
+                area *= 0.5
+                x_centroid = x_sum / (6 * area)
+                y_centroid = y_sum / (6 * area)
+
+                return (x_centroid, y_centroid, z_min)
+            center = polygon_centroid(self.render_polygon)
             self.texture_quad = (
                 (center[0] - 1/2, center[1] - 1/2, center[2]),
                 (center[0] + 1/2, center[1] - 1/2, center[2]),
