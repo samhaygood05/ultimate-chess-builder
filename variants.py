@@ -18,10 +18,11 @@ from tile import Tile
 from piece import Piece
 import pickle
 import copy
+from render_engines import GraphRenderEngine
 
 class Variants:
-    def save(name, render_engine):
-        path = f"presets/{name}.chess"
+    def save(name, render_engine, file_path = 'presets'):
+        path = f"saved/{file_path}/{name}.ucbgame"
         try:
             with open(path, 'xb') as f:
                 pickle.dump(render_engine, f)
@@ -30,54 +31,10 @@ class Variants:
                 pickle.dump(render_engine, f)
         print(f'{name} Preset Saved')
 
-    def load(name):
-        path = f"presets/{name}.chess"
+    def load(name, file_path = 'presets') -> GraphRenderEngine:
+        path = f"saved/{file_path}/{name}.ucbgame"
         with open(path, 'rb') as f:
             preset = pickle.load(f)
         print(f'{name} Preset Loaded')
         return preset
 
-    def create_standard_board(team1, team2, distance=4):
-        team1_area = [[Tile(Piece('rook', team1)), Tile(Piece('knight', team1)), Tile(Piece('bishop', team1)), Tile(Piece('queen', team1)), Tile(Piece('king', team1)), Tile(Piece('bishop', team1)), Tile(Piece('knight', team1)), Tile(Piece('rook', team1))],
-                    [Tile(Piece('pawn', team1)) for i in range(8)]]
-        
-        team2_area = [[Tile(Piece('pawn', team2)) for i in range(8)],
-                    [Tile(Piece('rook', team2)), Tile(Piece('knight', team2)), Tile(Piece('bishop', team2)), Tile(Piece('queen', team2)), Tile(Piece('king', team2)), Tile(Piece('bishop', team2)), Tile(Piece('knight', team2)), Tile(Piece('rook', team2))]]
-
-        empty_area_row = [Tile() for i in range(8)]
-
-        empty_area = [copy.deepcopy(empty_area_row) for i in range(distance)]
-        return team1_area + empty_area + team2_area
-
-    def create_empty_hex_board(size=6):
-        board = []
-        tile = [Tile()]
-        empty = [None]
-        for i in range(size):
-            board.append((size-i-1)*empty + (size+i)*tile)
-        for i in range(size-1):
-            board.append((2*size-i-2)*tile + (i+1)*empty)
-
-        return board
-    
-    def create_empty_square_board(size=8):
-        board = []
-        for i in range(size):
-            row = []
-            for j in range(size):
-                row.append(Tile())
-            board.append(row)
-        return board
-
-    
-    def dynamove_rook(board, tile, team, teams):
-        return board.get_tile(tile).type == 'rook' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))
-    
-    def dynamove_knight(board, tile, team, teams):
-        return board.get_tile(tile).type == 'knight' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))
-    
-    def dynamove_bishop(board, tile, team, teams):
-        return board.get_tile(tile).type == 'bishop' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))
-    
-    def dynamove_queen(board, tile, team, teams):
-        return board.get_tile(tile).type == 'queen' and (board.get_tile(tile).piece.has_moved or (tile[1] != '2' and tile[1] != '7'))

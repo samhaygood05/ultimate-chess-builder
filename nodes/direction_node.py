@@ -14,17 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from moveset import Moveset
+class DirectionNode:
+    def __init__(self, direction: str):
+        self.direction = direction
+        self.adjacencies = dict()
 
-class RuleSet:
-    def __init__(self, name, points, movesets: Moveset, promotion=None):
-        self.name = name
-        self.points = points
-        self.movesets = movesets
-        self.promotion = promotion
-
-    def rule_dict(*rulesets):
-        dictionary: dict = {}
-        for ruleset in rulesets:
-            dictionary.update({ruleset.name: ruleset})
-        return dictionary
+    def __str__(self) -> str:
+        return f'DirectionNode({self.direction})'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
