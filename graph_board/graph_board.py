@@ -387,9 +387,9 @@ class GraphPresets:
         return board
 
 
-    def corner_board(team1 = 'white', team2 = 'red', br=(0,0)):
-        board = GraphPresets.empty_rectangular_grid(7, 4, br)
-        board2 = GraphPresets.empty_rectangular_grid(4, 3, (br[0], br[1]+4))
+    def corner_board(team1 = 'white', team2 = 'red', br=(0,0), tint1=(0.7, 0.7, 0.7), tint2=(0.9, 0.9, 0.9)):
+        board = GraphPresets.empty_rectangular_grid(7, 4, br, tint1, tint2)
+        board2 = GraphPresets.empty_rectangular_grid(4, 3, (br[0], br[1]+4), tint1, tint2)
 
         board.combine_graphs(board2)
 
@@ -404,18 +404,21 @@ class GraphPresets:
             board.add_adjacency((i+1+br[0], 4+br[1]), (i+br[0], 3+br[1]), 'vertex', 'se')
 
         for i in range(4):
-            board.set_node_piece((5+br[0], i+br[1]), Piece('pawn', team1, 's'))
-            board.set_node_piece((i+br[0], 5+br[1]), Piece('pawn', team2, 'e'))
+            if team1:
+                board.set_node_piece((5+br[0], i+br[1]), Piece('pawn', team1, 's'))
+            if team2:
+                board.set_node_piece((i+br[0], 5+br[1]), Piece('pawn', team2, 'e'))
+        if team1:
+            board.set_node_piece((6+br[0], 3+br[1]), Piece('rook', team1, 's'))
+            board.set_node_piece((6+br[0], 2+br[1]), Piece('knight', team1, 's'))
+            board.set_node_piece((6+br[0], 1+br[1]), Piece('bishop', team1, 's'))
+            board.set_node_piece((6+br[0], 0+br[1]), Piece('queen', team1, 's'))
 
-        board.set_node_piece((6+br[0], 3+br[1]), Piece('rook', team1, 's'))
-        board.set_node_piece((6+br[0], 2+br[1]), Piece('knight', team1, 's'))
-        board.set_node_piece((6+br[0], 1+br[1]), Piece('bishop', team1, 's'))
-        board.set_node_piece((6+br[0], 0+br[1]), Piece('queen', team1, 's'))
-
-        board.set_node_piece((3+br[0], 6+br[1]), Piece('rook', team2, 'e'))
-        board.set_node_piece((2+br[0], 6+br[1]), Piece('knight', team2, 'e'))
-        board.set_node_piece((1+br[0], 6+br[1]), Piece('bishop', team2, 'e'))
-        board.set_node_piece((0+br[0], 6+br[1]), Piece('king', team2, 'e', is_royal=True))
+        if team2:
+            board.set_node_piece((3+br[0], 6+br[1]), Piece('rook', team2, 'e'))
+            board.set_node_piece((2+br[0], 6+br[1]), Piece('knight', team2, 'e'))
+            board.set_node_piece((1+br[0], 6+br[1]), Piece('bishop', team2, 'e'))
+            board.set_node_piece((0+br[0], 6+br[1]), Piece('king', team2, 'e', is_royal=True))
 
         return board
 
