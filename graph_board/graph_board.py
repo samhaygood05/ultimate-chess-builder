@@ -44,11 +44,11 @@ class GraphBoard:
     def get_direction_from_relative(self, forward_direction, relative_direction):
         return self.directions.get_direction_from_relative(forward_direction, relative_direction)
 
-    def add_node(self, position, tile: Tile=None, tint=None, render_polygon=None, texture_quad=None):
+    def add_node(self, position, tile: Tile=None, tint=None, render_polygon=None, texture_quad=None, texture_size=1/2):
         if tint == None:
             tint = (0.9, 0.9, 0.9) if (position[0] + position[1]) % 2 == 0 else (0.7, 0.7, 0.7)
         tile.tint = tint
-        node = TileNode(position, tile, render_polygon=render_polygon, texture_quad=texture_quad)
+        node = TileNode(position, tile, render_polygon=render_polygon, texture_quad=texture_quad, texture_size=texture_size)
         self.nodes[position] = node
         if tile != None and tile.piece != None and tile.piece.is_royal:
             for team in tile.piece.get_team_names():
@@ -245,7 +245,7 @@ class GraphBoard:
             return None
         return self.nodes[position].tile.type
     
-    def set_node_rendering(self, position, render_polygon=None, texture_quad=None):
+    def set_node_rendering(self, position, render_polygon=None, texture_quad=None, texture_size=1/2):
         if render_polygon != None:
             self.nodes[position].render_polygon = render_polygon
         if texture_quad != None:
@@ -270,10 +270,10 @@ class GraphBoard:
                 return (x_centroid, y_centroid, z_min)
             center = polygon_centroid(render_polygon)
             self.nodes[position].texture_quad = (
-                (center[0] - 1/2, center[1] - 1/2, center[2]),
-                (center[0] + 1/2, center[1] - 1/2, center[2]),
-                (center[0] + 1/2, center[1] + 1/2, center[2]),
-                (center[0] - 1/2, center[1] + 1/2, center[2])
+                (center[0] - texture_size, center[1] - texture_size, center[2]),
+                (center[0] + texture_size, center[1] - texture_size, center[2]),
+                (center[0] + texture_size, center[1] + texture_size, center[2]),
+                (center[0] - texture_size, center[1] + texture_size, center[2])
             )
 
     def clear_node_rendering(self):
@@ -383,6 +383,39 @@ class GraphPresets:
         for i in range(8):
             board.set_node_tile(shift(0, i), first_row[i])
             board.set_node_tile(shift(1, i), second_row[i])
+
+        return board
+
+
+    def corner_board(team1 = 'white', team2 = 'red', br=(0,0)):
+        board = GraphPresets.empty_rectangular_grid(7, 4, br)
+        board2 = GraphPresets.empty_rectangular_grid(4, 3, (br[0], br[1]+4))
+
+        board.combine_graphs(board2)
+
+        for i in range(4):
+            board.add_adjacency((i+br[0], 3+br[1]), (i+br[0], 4+br[1]), 'edge', 'w')
+            board.add_adjacency((i+br[0], 4+br[1]), (i+br[0], 3+br[1]), 'edge', 'e')
+            board.add_adjacency((i+1+br[0], 3+br[1]), (i+br[0], 4+br[1]), 'vertex', 'sw')
+            board.add_adjacency((i+br[0], 4+br[1]), (i+1+br[0], 3+br[1]), 'vertex', 'ne')
+        
+        for i in range(3):
+            board.add_adjacency((i+br[0], 3+br[1]), (i+1+br[0], 4+br[1]), 'vertex', 'nw')
+            board.add_adjacency((i+1+br[0], 4+br[1]), (i+br[0], 3+br[1]), 'vertex', 'se')
+
+        for i in range(4):
+            board.set_node_piece((5+br[0], i+br[1]), Piece('pawn', team1, 's'))
+            board.set_node_piece((i+br[0], 5+br[1]), Piece('pawn', team2, 'e'))
+
+        board.set_node_piece((6+br[0], 3+br[1]), Piece('rook', team1, 's'))
+        board.set_node_piece((6+br[0], 2+br[1]), Piece('knight', team1, 's'))
+        board.set_node_piece((6+br[0], 1+br[1]), Piece('bishop', team1, 's'))
+        board.set_node_piece((6+br[0], 0+br[1]), Piece('queen', team1, 's'))
+
+        board.set_node_piece((3+br[0], 6+br[1]), Piece('rook', team2, 'e'))
+        board.set_node_piece((2+br[0], 6+br[1]), Piece('knight', team2, 'e'))
+        board.set_node_piece((1+br[0], 6+br[1]), Piece('bishop', team2, 'e'))
+        board.set_node_piece((0+br[0], 6+br[1]), Piece('king', team2, 'e', is_royal=True))
 
         return board
 

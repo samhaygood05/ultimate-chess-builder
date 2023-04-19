@@ -67,9 +67,9 @@ class Move:
             current_position = new_position
             current_direction = new_direction
         
-        end_direction_final = board.get_direction_from_relative(start_direction, end_direction)
         for direction in change_directions:
-            end_direction_final = board.get_direction_from_relative(end_direction_final, direction)
+            end_direction_final = board.get_direction_from_relative(start_direction, direction)
+        end_direction_final = board.get_direction_from_relative(start_direction, end_direction)
         
         
         return current_position, end_direction_final, new_direction

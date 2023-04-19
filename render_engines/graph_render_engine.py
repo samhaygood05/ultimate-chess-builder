@@ -196,12 +196,11 @@ class GraphRenderEngine(AbstractRenderEngine):
             if piece and piece.name not in [None, 'empty']:
                 file_name = 'black' if piece.team == 'black' else 'white'
                 texture_id = imgs[file_name][piece.name]
-                piece_colors = (1.0, 1.0, 1.0) if piece.team in ('white', 'black') else self.rule_engine.teams[piece.team].color
-                piece_colors = [self.rule_engine.teams[piece.team].color]
+                piece_colors = [(1.0, 1.0, 1.0)] if piece.team in ('white', 'black') else [self.rule_engine.teams[piece.team].color]
 
                 for team_attr in ('trinary_team', 'secondary_team', 'quadinary_team'):
                     team = getattr(piece, team_attr)
-                    color = self.rule_engine.teams[team].color
+                    color = (1.0, 1.0, 1.0) if team == 'black' and piece.team == 'black' else self.rule_engine.teams[team].color
                     piece_colors.append(color)
 
                 glEnable(GL_BLEND)
@@ -342,7 +341,7 @@ class GraphRenderEngine(AbstractRenderEngine):
                         print('selected', hover_tile)
                         if selected_tile == '':
                             selected_tile = hover_tile
-                        elif self.rule_engine.turn_order:
+                        elif self.rule_engine.turn_order and hover_tile != selected_tile:
                             self.board.current_team_index %= len(self.rule_engine.turn_order)
                             self.board = self.rule_engine.play_move(self.board, selected_tile, hover_tile, self.illegal_moves, False)
                             saved = False

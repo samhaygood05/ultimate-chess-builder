@@ -194,9 +194,8 @@ class GraphRuleEngine:
         new_board.set_node_piece(end_pos, piece.moved())
         new_board.set_node_piece(start_pos, None)
 
-        new_board.get_node_piece(end_pos).name = piece_name
 
-        promotion = self.rulesets[piece.name].promotion
+        promotion = self.rulesets[piece_name].promotion
         if new_facing != None:
             new_board.get_node_piece(end_pos).facing = new_facing
 

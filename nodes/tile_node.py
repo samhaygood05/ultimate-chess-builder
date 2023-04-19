@@ -17,7 +17,7 @@ limitations under the License.
 from tile import Tile
 
 class TileNode:
-    def __init__(self, position, tile: Tile=None, adjacency_types=None, render_polygon=None, texture_quad=None):
+    def __init__(self, position, tile: Tile=None, adjacency_types=None, render_polygon=None, texture_quad=None, texture_size=1/2):
         self.position = position
         self.tile = tile
         if adjacency_types == None:
@@ -58,10 +58,10 @@ class TileNode:
                 return (x_centroid, y_centroid, z_min)
             center = polygon_centroid(self.render_polygon)
             self.texture_quad = (
-                (center[0] - 1/2, center[1] - 1/2, center[2]),
-                (center[0] + 1/2, center[1] - 1/2, center[2]),
-                (center[0] + 1/2, center[1] + 1/2, center[2]),
-                (center[0] - 1/2, center[1] + 1/2, center[2])
+                (center[0] - texture_size, center[1] - texture_size, center[2]),
+                (center[0] + texture_size, center[1] - texture_size, center[2]),
+                (center[0] + texture_size, center[1] + texture_size, center[2]),
+                (center[0] - texture_size, center[1] + texture_size, center[2])
             )
         else:
             self.texture_quad = texture_quad
