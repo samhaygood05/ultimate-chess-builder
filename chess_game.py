@@ -147,29 +147,7 @@ if __name__ == "__main__":
     # red_promotion = [(6, i+7) for i in range(4)] + [(i, 6) for i in range(4)]
     # black_promotion = [(6, 14+i) for i in range(4)] + [(i, 13) for i in range(4)]
 
-    # right = 'lambda board, position, team, teams: position in ([(i, 0) for i in range(7)] + [(i, 7) for i in range(7)] + [(i, 14) for i in range(7)])'
-    # facing_west = ' and board.get_node_piece(position).facing == "e"'
-    # left = 'lambda board, position, team, teams: position in ([(0, 14+i) for i in range(7)] + [(0, i) for i in range(7)] + [(0, 7+i) for i in range(7)])'
-    # facing_north = ' and board.get_node_piece(position).facing == "s"'
-
-
-    # PAWN_CAPTURE_LEFT = Moveset([Move(('fr', 'vertex'))], 1, False, True)
-    # PAWN_CAPTURE_RIGHT = Moveset([Move(('fl', 'vertex'))], 1, False, True)
-
-    # PAWN_CAPTURE_LEFT_OE = Moveset([Move(('fr', 'vertex'), end_direction='r')], 1, False, True)
-    # PAWN_CAPTURE_RIGHT_OE = Moveset([Move(('fl', 'vertex'), end_direction='l')], 1, False, True)
-
-    # PAWN_CAPTURE_RIGHT.add_condition(right, PAWN_CAPTURE_RIGHT_OE)
-    # PAWN_CAPTURE_LEFT.add_condition(left, PAWN_CAPTURE_LEFT_OE)
-
-    # PAWN_MOVE_ORE = Moveset([Move(('f', 'edge'), end_direction='l')], 1, True, False)
-    # PAWN_MOVE_OLE = Moveset([Move(('f', 'edge'), end_direction='r')], 1, True, False)
-
-    # mp.PAWN_MOVE.add_condition(right + facing_west, PAWN_MOVE_ORE).add_condition(left + facing_north, PAWN_MOVE_OLE)
-
-    # rule_engine = GraphRuleEngine(rulesets=RuleSet.rule_dict(
-    #     RuleSet('pawn', 10, [mp.PAWN_MOVE, PAWN_CAPTURE_LEFT, PAWN_CAPTURE_RIGHT], 'queen')
-    # ), teams=Team.team_dict(tp.WHITE, tp.RED, tp.BLACK), promotion_tiles={
+    # rule_engine = GraphRuleEngine(teams=Team.team_dict(tp.WHITE, tp.RED, tp.BLACK), promotion_tiles={
     #     'white': red_promotion+black_promotion,
     #     'red': black_promotion+white_promotion,
     #     'black': white_promotion+red_promotion
