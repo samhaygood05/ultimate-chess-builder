@@ -42,8 +42,6 @@ class Piece:
         else:
             self.is_royal = is_royal
 
-        
-
     def moved(self):
         self.has_moved = True
         return self

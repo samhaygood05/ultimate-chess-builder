@@ -75,8 +75,8 @@ class GraphRuleEngine:
 
         if piece.name == piece_name:
             for moveset in ruleset.movesets:
-                if moveset.meets_requirements(board, position, team, self.teams):
-                    moves, move_distance, can_move_empty, can_capture = moveset.get_moves(board, position, team, self.teams)
+                if moveset.meets_requirements(board, position, piece.get_team_names(), self.teams):
+                    moves, move_distance, can_move_empty, can_capture = moveset.get_moves(board, position, piece.get_team_names(), self.teams)
 
                     for move in moves:
                         new_position = position
