@@ -1,0 +1,10 @@
+{
+    "textures": {
+        "default": "default:white/rook",
+        "default:black": "default:black/rook"
+    },
+    "value": 50,
+    "movesets": [
+        "default:straight"
+    ]
+}

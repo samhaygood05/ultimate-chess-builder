@@ -1,0 +1,21 @@
+{
+    "set": {
+        "source.piece.type": "source.piece.type.properties.promotion"
+    },
+    "swap": {
+        "tile": [],
+        "piece": [
+            {
+                "piece1": "target",
+                "piece2": "source",
+                "properties": [
+                    "full"
+                ]
+            }
+        ]
+    },
+    "remove": {
+        "target": true,
+        "source": false
+    }
+}

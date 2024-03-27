@@ -1,5 +1,5 @@
 '''
-Copyright 2023 Sam A. Haygood
+Copyright 2024 Sam A. Haygood
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,70 +14,38 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-from hashlib import new
-
 
 class Move:
-    def __init__(self, *sequence, end_direction: str = 'f') -> None:
+    def __init__(self, sequence, end_direction: str = 'forward', min_distance: int = 1, max_distance: int = -1):
         self.sequence = sequence
         self.end_direction = end_direction
+        if min_distance < 1:
+            raise ValueError('min_distance must be greater than 0')
+        self.min_distance = min_distance
+        if max_distance != -1 and max_distance < min_distance:
+            raise ValueError('max_distance must be greater than or equal to min_distance')
+        self.max_distance = max_distance
 
-    def get_intermediate_position(self, board, start_positions, i):
-        relative_direction, type = self.sequence[i]
-        end_positions = []
-        for start_position, start_direction, end_direction in start_positions:
-            if type in board.directions.included_adjacency_types:
-                new_direction = board.get_direction_from_relative(start_direction, relative_direction)
-            else:
-                new_direction = relative_direction
-            adjacencies = board.get_node_adjacencies(start_position, type)
-            try:
-                new_positions = adjacencies[new_direction]
-                for position in new_positions:
-                    new_position = position[1]
-                    change_direction = position[2]
-                    if change_direction != None and change_direction != 'f':
-                        new_direction = board.get_direction_from_relative(new_direction, change_direction)
-                        end_direction = change_direction
-                    end_positions.append((new_position, new_direction, end_direction))
-            except KeyError:
-                pass
-        return end_positions
-
-
-    def get_end_position(self, board, start_position, start_direction):
-        end_direction = self.end_direction
-        change_directions = []
-        current_position = start_position
-        current_direction = start_direction
-        for relative_direction, type in self.sequence:
-            if type in board.directions.included_adjacency_types:
-                new_direction = board.get_direction_from_relative(current_direction, relative_direction)
-            else:
-                new_direction = relative_direction
-            adjacencies = board.get_node_adjacencies(current_position, type)
-            try:
-                new_position = adjacencies[new_direction][0][1]
-                change_direction = adjacencies[new_direction][0][2]
-                if change_direction != None and change_direction != 'f':
-                    new_direction = board.get_direction_from_relative(new_direction, change_direction)
-                    change_directions.append(change_direction)
-            except KeyError:
-                return None, None, None
-            current_position = new_position
-            current_direction = new_direction
-        
-        end_direction_final = start_direction
-        for direction in change_directions:
-            end_direction_final = board.get_direction_from_relative(end_direction_final, direction)
-        end_direction_final = board.get_direction_from_relative(end_direction_final, end_direction)
-        
-        
-        return current_position, end_direction_final, new_direction
-
+    @staticmethod
+    def build(dictionary: dict) -> 'Move':
+        sequence = dictionary['sequence']
+        end_direction = "forward"
+        if 'end' in dictionary:
+            end_direction = dictionary['end']
+        return Move(sequence, end_direction=end_direction)
+    
     def __str__(self) -> str:
-        return " -> ".join([f"{direction} ({type})" for direction, type in self.sequence])
-    
-    def __repr__(self) -> str:
-        return f'Move({self.sequence})'
-    
+        string = "move\n ├ sequence:\n"
+        for step, i in zip(self.sequence, range(len(self.sequence))):
+            if i == len(self.sequence) - 1:
+                string += f" │ └ {step}\n"
+            else:
+                string += f" │ ├ {step}\n"
+        string += f" ├ end: {self.end_direction}"
+        if self.max_distance != -1:
+            string += f"\n └ range: [{self.min_distance}, {self.max_distance}]"
+        else:
+            string += f"\n └ range: [{self.min_distance}, ∞)"
+        return string
+
+        

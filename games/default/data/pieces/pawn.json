@@ -1,0 +1,384 @@
+{
+    "textures": {
+        "default": "default:white/pawn",
+        "default:black": "default:black/pawn"
+    },
+    "value": 10,
+    "movesets": [
+        {
+            "name": "default",
+            "moves": [
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                }
+            ],
+            "max_range": 1,
+            "mutator": {
+                "selector": "switch",
+                "cases": [
+                    {
+                        "value": {
+                            "set": {
+                                "source.piece.type": "source.piece.type.properties.promotion",
+                                "source.piece.properties.en_passant": false
+                            },
+                            "swap": {
+                                "tile": [],
+                                "piece": [
+                                    {
+                                        "piece1": "target",
+                                        "piece2": "source",
+                                        "properties": [
+                                            "full"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "remove": {
+                                "target": true,
+                                "source": false
+                            }
+                        },
+                        "condition": {
+                            "type": "contains",
+                            "value1": "default:promotion",
+                            "value2": "target.tile.type"
+                        }
+                    }
+                ],
+                "default": {
+                    "set": {
+                        "source.piece.properties.en_passant": false
+                    },
+                    "swap": {
+                        "tile": [],
+                        "piece": [
+                            {
+                                "piece1": "target",
+                                "piece2": "source",
+                                "properties": [
+                                    "full"
+                                ]
+                            }
+                        ]
+                    },
+                    "remove": {
+                        "target": true,
+                        "source": false
+                    }
+                }
+            },
+            "condition": {
+                "type": "not",
+                "condition": "default:occupied"
+            }
+        },
+        {
+            "name": "first_move",
+            "moves": [
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                }
+            ],
+            "min_range": 2,
+            "max_range": 2,
+            "mutator": {
+                "selector": "switch",
+                "cases": [
+                    {
+                        "value": {
+                            "set": {
+                                "source.piece.type": "source.piece.type.properties.promotion",
+                                "source.piece.properties.en_passant": true
+                            },
+                            "swap": {
+                                "tile": [],
+                                "piece": [
+                                    {
+                                        "piece1": "target",
+                                        "piece2": "source",
+                                        "properties": [
+                                            "full"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "remove": {
+                                "target": true,
+                                "source": false
+                            }
+                        },
+                        "condition": {
+                            "type": "contains",
+                            "value1": "default:promotion",
+                            "value2": "target.tile.type"
+                        }
+                    }
+                ],
+                "default": {
+                    "set": {
+                        "source.piece.properties.en_passant": true
+                    },
+                    "swap": {
+                        "tile": [],
+                        "piece": [
+                            {
+                                "piece1": "target",
+                                "piece2": "source",
+                                "properties": [
+                                    "full"
+                                ]
+                            }
+                        ]
+                    },
+                    "remove": {
+                        "target": true,
+                        "source": false
+                    }
+                }
+            },
+            "condition": {
+                "type": "and",
+                "conditions": [
+                    "default:first_move",
+                    {
+                        "type": "not",
+                        "condition": "default:occupied"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "capture",
+            "moves": [
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward-left",
+                            "type": "vertex"
+                        }
+                    ],
+                    "end": "forward"
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward-right",
+                            "type": "vertex"
+                        }
+                    ]
+                }
+            ],
+            "max_range": 1,
+            "mutator": {
+                "selector": "switch",
+                "cases": [
+                    {
+                        "value": {
+                            "set": {
+                                "source.piece.type": "source.piece.type.properties.promotion",
+                                "source.piece.properties.en_passant": false
+                            },
+                            "swap": {
+                                "tile": [],
+                                "piece": [
+                                    {
+                                        "piece1": "target",
+                                        "piece2": "source",
+                                        "properties": [
+                                            "full"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "remove": {
+                                "target": true,
+                                "source": false
+                            }
+                        },
+                        "condition": {
+                            "type": "contains",
+                            "value1": "default:promotion",
+                            "value2": "target.tile.type"
+                        }
+                    }
+                ],
+                "default": {
+                    "set": {
+                        "source.piece.properties.en_passant": false
+                    },
+                    "swap": {
+                        "tile": [],
+                        "piece": [
+                            {
+                                "piece1": "target",
+                                "piece2": "source",
+                                "properties": [
+                                    "full"
+                                ]
+                            }
+                        ]
+                    },
+                    "remove": {
+                        "target": true,
+                        "source": false
+                    }
+                }
+            },
+            "condition": "default:enemy_strict"
+        },
+        {
+            "name": "en_passant",
+            "moves": [
+                {
+                    "target": {
+                        "sequence": [
+                            {
+                                "direction": "forward-left",
+                                "type": "vertex"
+                            }
+                        ],
+                        "max_range": 1
+                    },
+                    "extra": [
+                        {
+                            "sequence": [
+                                {
+                                    "direction": "forward-left",
+                                    "type": "vertex"
+                                },
+                                {
+                                    "direction": "backward-left",
+                                    "type": "edge"
+                                }
+                            ],
+                            "max_range": 1
+                        }
+                    ]
+                },
+                {
+                    "target": {
+                        "sequence": [
+                            {
+                                "direction": "forward-right",
+                                "type": "vertex"
+                            }
+                        ],
+                        "max_range": 1
+                    },
+                    "extra": [
+                        {
+                            "sequence": [
+                                {
+                                    "direction": "forward-right",
+                                    "type": "vertex"
+                                },
+                                {
+                                    "direction": "backward-right",
+                                    "type": "edge"
+                                }
+                            ],
+                            "max_range": 1
+                        }
+                    ]
+                }
+            ],
+            "max_range": 1,
+            "mutator": {
+                "selector": "switch",
+                "cases": [
+                    {
+                        "value": {
+                            "set": {
+                                "source.piece.type": "source.piece.type.properties.promotion",
+                                "source.piece.properties.en_passant": false
+                            },
+                            "swap": {
+                                "tile": [],
+                                "piece": [
+                                    {
+                                        "piece1": "target",
+                                        "piece2": "source",
+                                        "properties": [
+                                            "full"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "remove": {
+                                "target": false,
+                                "source": false,
+                                "extra.0": true
+                            }
+                        },
+                        "condition": {
+                            "type": "contains",
+                            "value1": "default:promotion",
+                            "value2": "target.tile.type"
+                        }
+                    }
+                ],
+                "default": {
+                    "set": {
+                        "source.piece.properties.en_passant": false
+                    },
+                    "swap": {
+                        "tile": [],
+                        "piece": [
+                            {
+                                "piece1": "target",
+                                "piece2": "source",
+                                "properties": [
+                                    "full"
+                                ]
+                            }
+                        ]
+                    },
+                    "remove": {
+                        "target": false,
+                        "source": false,
+                        "extra.0": true
+                    }
+                }
+            },
+            "condition": {
+                "type": "and",
+                "conditions": [
+                    {
+                        "type": "compare",
+                        "value1": "extra.0.piece.properties.en_passant",
+                        "value2": true
+                    },
+                    {
+                        "type": "not",
+                        "condition": "default:occupied"
+                    },
+                    {
+                        "type": "not",
+                        "condition": {
+                            "type": "intersect",
+                            "value1": "extra.0.piece.teams",
+                            "value2": "source.piece.teams"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "properties": {
+        "promotion": "default:queen"
+    },
+    "instance_properties": {
+        "en_passant": false
+    }
+}

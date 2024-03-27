@@ -1,0 +1,11 @@
+{
+    "textures": {
+        "default": "default:white/queen",
+        "default:black": "default:black/queen"
+    },
+    "value": 90,
+    "movesets": [
+        "default:straight",
+        "default:diagonal"
+    ]
+}

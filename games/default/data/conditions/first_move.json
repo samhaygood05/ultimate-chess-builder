@@ -1,0 +1,5 @@
+{
+    "type": "compare",
+    "value1": "source.piece.has_moved",
+    "value2": false
+}

@@ -1,0 +1,37 @@
+{
+    "moves": [
+        {
+            "sequence": [
+                {
+                    "direction": "forward-right",
+                    "type": "vertex"
+                }
+            ]
+        },
+        {
+            "sequence": [
+                {
+                    "direction": "forward-left",
+                    "type": "vertex"
+                }
+            ]
+        },
+        {
+            "sequence": [
+                {
+                    "direction": "backward-right",
+                    "type": "vertex"
+                }
+            ]
+        },
+        {
+            "sequence": [
+                {
+                    "direction": "backward-left",
+                    "type": "vertex"
+                }
+            ]
+        }
+    ],
+    "mutator": "default:move"
+}

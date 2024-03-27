@@ -1,0 +1,8 @@
+{
+    "type": "not",
+    "condition": {
+        "type": "intersect",
+        "value1": "target.piece.teams",
+        "value2": "source.piece.teams"
+    }
+}

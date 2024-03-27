@@ -1,0 +1,10 @@
+{
+    "textures": {
+        "default": "default:white/bishop",
+        "default:black": "default:black/bishop"
+    },
+    "value": 30,
+    "movesets": [
+        "default:diagonal"
+    ]
+}

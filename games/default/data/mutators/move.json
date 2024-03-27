@@ -1,0 +1,18 @@
+{
+    "swap": {
+        "tile": [],
+        "piece": [
+            {
+                "piece1": "target",
+                "piece2": "source",
+                "properties": [
+                    "full"
+                ]
+            }
+        ]
+    },
+    "remove": {
+        "target": true,
+        "source": false
+    }
+}

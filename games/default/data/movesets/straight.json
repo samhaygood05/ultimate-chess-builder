@@ -1,0 +1,37 @@
+{
+    "moves": [
+        {
+            "sequence": [
+                {
+                    "direction": "forward",
+                    "type": "edge"
+                }
+            ]
+        },
+        {
+            "sequence": [
+                {
+                    "direction": "backward",
+                    "type": "edge"
+                }
+            ]
+        },
+        {
+            "sequence": [
+                {
+                    "direction": "left",
+                    "type": "edge"
+                }
+            ]
+        },
+        {
+            "sequence": [
+                {
+                    "direction": "right",
+                    "type": "edge"
+                }
+            ]
+        }
+    ],
+    "mutator": "default:move"
+}

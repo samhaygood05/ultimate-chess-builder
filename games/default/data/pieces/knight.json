@@ -1,0 +1,272 @@
+{
+    "textures": {
+        "default": "default:white/knight",
+        "default:black": "default:black/knight"
+    },
+    "value": 30,
+    "movesets": [
+        {
+            "name": "L_move",
+            "moves": [
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "backward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "backward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "backward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "backward",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "left",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                },
+                {
+                    "sequence": [
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "right",
+                            "type": "edge"
+                        },
+                        {
+                            "direction": "forward",
+                            "type": "edge"
+                        }
+                    ]
+                }
+            ],
+            "max_range": 1,
+            "mutator": "default:move"
+        }
+    ]
+}
